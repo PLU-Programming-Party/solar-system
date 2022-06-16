@@ -7,7 +7,7 @@ import renderer from './Renderer';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { SpacialBody } from './gravity/SpacialBody';
 import { PlanetarySystem } from './gravity/PlanetarySystem';
-import { PointLight } from 'three';
+import { AmbientLight, LineBasicMaterial, PointLight } from 'three';
 
 let sun = new SpacialBody(
 	new THREE.Vector3(),
@@ -51,15 +51,25 @@ const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(moon.radius * radiusSca
 let light = new PointLight(0xFFFFFF);
 light.position.set(sun.pos.x, sun.pos.y, sun.pos.z);
 
+let ambient = new AmbientLight(0x333333);
+
+let simulation = ps.predictPath(earth, timeScale / 1000, 365 * 1000).map(p => p.multiplyScalar(scale));
+const material = new LineBasicMaterial({color:0xff0000});
+const geometry = new THREE.BufferGeometry().setFromPoints(simulation);
+const line = new THREE.Line(geometry, material);
+
 scene.add(sunMesh);
 scene.add(earthMesh);
 scene.add(moonMesh);
 scene.add(light);
+scene.add(ambient);
+scene.add(line);
 camera.position.set(0, 0, 20);
 camera.lookAt(0,0,0); 
 
 let controls = new OrbitControls(camera, renderer.domElement);
 controls.enableZoom = true;
+
 
 //animation frame for cube
 function animate() {
@@ -74,7 +84,6 @@ function animate() {
   ps.accelerateSystem(delta * timeScale);
   ps.updateSystem(delta * timeScale);
   
-  camera.position.set(earth.pos.x * scale, earth.pos.y * scale, .15);
   controls.update();
 
   sunMesh.position.set(sun.pos.x, sun.pos.y, sun.pos.z);
