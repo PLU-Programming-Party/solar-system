@@ -16,7 +16,7 @@ export class PlanetarySystem {
      * Calculates force and acceleration
      * of each body in system
      */
-    public accelerateSystem() {
+    public accelerateSystem(time: number) {
         for (const body of this._bodies){
             let netForce = new THREE.Vector3();
             for (const compareBody of this._bodies) {
@@ -39,16 +39,16 @@ export class PlanetarySystem {
             let acc = netForce.clone();
             acc.divideScalar(body.mass);
 
-            body.accelerate(acc);
+            body.accelerate(acc, time);
         }
     }
 
     /**
      * Calls update function for each body
      */
-    public updateSystem() {
+    public updateSystem(time: number) {
         for (const sb of this._bodies)
-            sb.update();
+            sb.update(time);
     }
 
     public addBody(body: SpacialBody) {
