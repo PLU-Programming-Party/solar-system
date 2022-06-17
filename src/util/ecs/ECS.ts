@@ -4,9 +4,9 @@ import Transform from './Transform';
 import Mesh from './Mesh';
 
 /**
- * This file contains the API for the ECS system.
+ * This file contains the API for the ECS framework.
  * ECS stands for Entity Component System, and promotes a 
- * compositional, object-oriented architecture for game 
+ * compositional, data-oriented architecture for game 
  * development. 
  * 
  * Objects in a scene should be represented by "entities". 

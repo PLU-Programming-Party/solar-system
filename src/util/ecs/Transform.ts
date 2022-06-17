@@ -5,13 +5,9 @@ class Transform extends Component{
     position: THREE.Vector3[] = [];
     rotation: THREE.Vector3[] = [];
     scale: THREE.Vector3[] = [];
-    private _size: number;
-    private _ids: number[] = [];
 
     constructor(entity_id: number) {
-        super();
-        this._size = this.position.length;
-        this._ids.push(entity_id);
+        super(entity_id);
         this.position.push(new THREE.Vector3(0, 0, 0));
         this.rotation.push(new THREE.Vector3(0, 0, 0));
         this.scale.push(new THREE.Vector3(1, 1, 1));

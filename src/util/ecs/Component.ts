@@ -1,4 +1,3 @@
-
 /**
  * The Component class is the base class for all components.
  * Components are containers for data, and should contain no 
@@ -9,6 +8,14 @@
  * 
  */
 abstract class Component{
+    _size: number;
+    _ids: number[] = [];
+
+    constructor(entity_id: number){
+        this._ids.push(entity_id);
+        this._size = this._ids.length;
+    }
+
     _getData(entity_id: number): any{
         return null;
     }
