@@ -1,6 +1,5 @@
 import { SpacialBody } from "./SpacialBody";
 import * as THREE from 'three';
-import { Plane } from "three";
 export class PlanetarySystem {
     private static readonly G = 6.67 * Math.pow(10, -11); // N * m^2 / kg^2
 
@@ -27,7 +26,7 @@ export class PlanetarySystem {
 
         let positions: THREE.Vector3[] = [];
 
-        positions.push(clonedBody.pos);
+        positions.push(clonedBody.pos.clone());
         for (let i = 0; i < count; i++) {
             clonedSystem.accelerateSystem(time);
             clonedSystem.updateSystem(time);
