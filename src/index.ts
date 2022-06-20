@@ -35,7 +35,7 @@ ps.addBody(sun);
 ps.addBody(moon);
 
 let scale = 0.0000000001;
-let timeScale = 60 * 60 * 24;
+let timeScale = 60 * 60 * 6;
 
 let radiusScale = scale * 10;
 let radiusScaleSun = scale * 10;
@@ -61,7 +61,7 @@ let controls = new OrbitControls(camera, renderer.domElement);
 
 //animation frame for cube
 function animate() {
-  camera.position.set(earth.pos.x * scale, earth.pos.y * scale, .2);
+  // camera.position.set(earth.pos.x * scale, earth.pos.y * scale, .2);
   controls.update();
 
   sunMesh.position.set(sun.pos.x * scale, sun.pos.y * scale, sun.pos.z * scale);
@@ -73,11 +73,11 @@ function animate() {
   requestAnimationFrame(animate);
 };
 
-const fixedInterval = 50; // Interval time in milliseconds
+const fixedInterval = 20; // Interval time in milliseconds
 const deltaTime = fixedInterval / 1000 * timeScale;
 
 const approxYear = 368 * 24 * 60 * 60 / timeScale; // Semi-redundent "24 * 60 * 60 / timeScale"; only important if timeScale changes
-const simulationIterations = approxYear * 1000 / 50;
+const simulationIterations = approxYear * 1000 / fixedInterval;
 
 let earthSimulation = ps.predictPath(earth, deltaTime, simulationIterations).map(p => p.multiplyScalar(scale));
 const earthMaterial = new THREE.LineBasicMaterial({color:0xff0000});
