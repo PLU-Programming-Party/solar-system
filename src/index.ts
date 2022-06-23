@@ -6,6 +6,7 @@ import renderer from './Renderer';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { SpacialBody } from './gravity/SpacialBody';
 import { PlanetarySystem } from './gravity/PlanetarySystem';
+import nebulaSystem from './Background'
 
 let sun = new SpacialBody(
 	new THREE.Vector3(),
@@ -57,6 +58,8 @@ scene.add(ambient);
 camera.position.set(0, 0, 20);
 camera.lookAt(0,0,0); 
 
+const nebula = nebulaSystem(scene, THREE);
+
 let controls = new OrbitControls(camera, renderer.domElement);
 
 //animation frame for cube
@@ -69,8 +72,9 @@ function animate() {
   moonMesh.position.set(moon.pos.x * scale, moon.pos.y * scale, moon.pos.z * scale);
 
   renderer.render(scene, camera);
-
+  nebula.update(0.1);
   requestAnimationFrame(animate);
+ 
 };
 
 const fixedInterval = 20; // Interval time in milliseconds

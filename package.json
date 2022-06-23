@@ -29,6 +29,8 @@
     "webpack-dev-server": "^4.9.2"
   },
   "dependencies": {
-    "three": "^0.141.0"
+    "@babel/runtime": "^7.18.3",
+    "three": "^0.141.0",
+    "three-nebula": "^10.0.3"
   }
 }
