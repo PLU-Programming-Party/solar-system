@@ -72,7 +72,7 @@ function animate() {
   moonMesh.position.set(moon.pos.x * scale, moon.pos.y * scale, moon.pos.z * scale);
 
   renderer.render(scene, camera);
-  nebula.update(0.1);
+  nebula.update(0);
   requestAnimationFrame(animate);
  
 };

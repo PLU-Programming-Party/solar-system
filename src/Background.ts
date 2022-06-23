@@ -7,13 +7,13 @@ export default function nebulaSystem(scene: THREE.Scene, three: typeof THREE){
     const color1: THREE.Color = new THREE.Color();
     const color2: THREE.Color = new THREE.Color();
 
-    emitter.setRate(new Rate(new Span(4, 16), new Span(0.01)))
+    emitter.setRate(new Rate(new Span(1, 3), new Span(5)))
     .addInitializers([
       new Position(new PointZone(0, 0)),
       new Mass(1),
-      new Radius(6, 12),
-      new Life(3),
-      new RadialVelocity(45, new Vector3D(0, 1, 0), 180),
+      new Radius(3, 6),
+      new Life(100),
+      new RadialVelocity(new Span(3, 6), new Vector3D(0, 1, 0), 180),
     ])
     .addBehaviours([
       new Alpha(1, 0),
