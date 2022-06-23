@@ -3,6 +3,7 @@ export class SpacialBody {
     private _pos: THREE.Vector3; // m
     private _vel: THREE.Vector3; // m/s
     private _radius: number; // m
+    private density: number;
     
     private _mass: number; // kg
 
@@ -27,12 +28,19 @@ export class SpacialBody {
         this._pos = pos;
         this._vel = vel;
         this._radius = radius;
+        this.density = density;
 
         // Calculate Mass
         let volume = 4 * Math.PI * Math.pow(radius, 3) / 3;
         this._mass = volume * density;
 
         this.isStationary = isStationary;
+    }
+
+    public clone(): SpacialBody {
+        let newBody = new SpacialBody(this._pos.clone(), this._vel.clone(), this.radius, this.density, this.isStationary);
+        newBody._id = this._id;
+        return newBody;
     }
 
     /**

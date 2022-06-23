@@ -12,6 +12,30 @@ export class PlanetarySystem {
         this._bodies = [];
     }
 
+    public clone(): PlanetarySystem {
+        let newSystem = new PlanetarySystem();
+        for (const body of this._bodies)
+            newSystem.addBody(body.clone());
+        return newSystem;
+    }
+
+    public predictPath(body: SpacialBody, time: number, count: number): THREE.Vector3[] {
+        let clonedSystem = this.clone();
+
+        let clonedBody = clonedSystem._bodies.filter(b => b.id === body.id)[0];
+
+        let positions: THREE.Vector3[] = [];
+
+        positions.push(clonedBody.pos.clone());
+        for (let i = 0; i < count; i++) {
+            clonedSystem.accelerateSystem(time);
+            clonedSystem.updateSystem(time);
+            positions.push(clonedBody.pos.clone());
+        }
+
+        return positions;
+    }
+
     /**
      * Calculates force and acceleration
      * of each body in system
