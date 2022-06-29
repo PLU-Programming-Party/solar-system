@@ -1,7 +1,7 @@
 import { SpacialBody } from "./SpacialBody";
 import * as THREE from 'three';
 export class PlanetarySystem {
-    private static readonly G = 6.67 * Math.pow(10, -11); // N * m^2 / kg^2
+    private static readonly G = .00003;
 
     private _bodies: SpacialBody[];
 
@@ -10,6 +10,20 @@ export class PlanetarySystem {
      */
     constructor() {
         this._bodies = [];
+    }
+
+    public constructCentralBody(mass: number): SpacialBody {
+        const centralBody = new SpacialBody(new THREE.Vector3(), undefined, mass, true);
+        this.addBody(centralBody);
+        return centralBody;
+    }
+
+    public constructPlanetaryBody(distance: number, mass: number, orbitBody: SpacialBody) {
+        const pos = (new THREE.Vector3(distance, 0, 0)).add(orbitBody.pos);
+        const vel = (new THREE.Vector3(0, Math.sqrt(PlanetarySystem.G * orbitBody.mass / Math.abs(distance)), 0)).add(orbitBody.vel);
+        const planetaryBody = new SpacialBody(pos, vel, mass);
+        this.addBody(planetaryBody);
+        return planetaryBody;
     }
 
     public clone(): PlanetarySystem {
@@ -75,7 +89,7 @@ export class PlanetarySystem {
             sb.update(time);
     }
 
-    public addBody(body: SpacialBody) {
+    private addBody(body: SpacialBody) {
         this._bodies.push(body);
     }
     

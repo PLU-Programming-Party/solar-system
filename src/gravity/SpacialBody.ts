@@ -1,11 +1,9 @@
 import * as THREE from 'three';
+
 export class SpacialBody {
-    private _pos: THREE.Vector3; // m
-    private _vel: THREE.Vector3; // m/s
-    private _radius: number; // m
-    private density: number;
-    
-    private _mass: number; // kg
+    private _pos: THREE.Vector3;
+    private _vel: THREE.Vector3;
+    private _mass: number;
 
     private static nextId = 0;
     private _id: number;
@@ -15,30 +13,24 @@ export class SpacialBody {
     /**
      * Creates an instance of SpacialBody
      * 
-     * @param pos          xyz in meters
-     * @param vel          xyz in m/s
-     * @param radius       distance from center to edge in meters
-     * @param density      kg / m^3
-     * @param isStationary Does the body stay in the same location
+     * @param pos
+     * @param vel
+     * @param mass
+     * @param isStationary
      */
-    constructor(pos: THREE.Vector3 = new THREE.Vector3(), vel: THREE.Vector3 = new THREE.Vector3(), radius = 1, density = 3000, isStationary = false) {
+    constructor(pos: THREE.Vector3 = new THREE.Vector3(), vel: THREE.Vector3 = new THREE.Vector3(), mass = 1, isStationary = false) {
         this._id = SpacialBody.nextId;
         SpacialBody.nextId++;
 
         this._pos = pos;
         this._vel = vel;
-        this._radius = radius;
-        this.density = density;
-
-        // Calculate Mass
-        let volume = 4 * Math.PI * Math.pow(radius, 3) / 3;
-        this._mass = volume * density;
+        this._mass = mass;
 
         this.isStationary = isStationary;
     }
 
     public clone(): SpacialBody {
-        let newBody = new SpacialBody(this._pos.clone(), this._vel.clone(), this.radius, this.density, this.isStationary);
+        let newBody = new SpacialBody(this._pos.clone(), this._vel.clone(), this.mass, this.isStationary);
         newBody._id = this._id;
         return newBody;
     }
@@ -46,10 +38,10 @@ export class SpacialBody {
     /**
      * Applies acceleration to velocity
      * 
-     * @param acc Rate of velocity's change // m/s^2
-     * @param time in seconds
+     * @param acc Rate of velocity's change
+     * @param time in milliseconds
      */
-    public accelerate(acc: THREE.Vector3, time: number = 1) {
+    public accelerate(acc: THREE.Vector3, time: number = 20) {
         if (!this.isStationary){
             acc.multiplyScalar(time);
             this._vel.add(acc);
@@ -59,9 +51,9 @@ export class SpacialBody {
     /**
      * Applies velocity to position
      * 
-     * @param time in seconds
+     * @param time in milliseconds
      */
-    public update(time: number = 1) {
+    public update(time: number = 20) {
         if (!this.isStationary) {
             let delta = this._vel.clone();
             delta.multiplyScalar(time);
@@ -77,12 +69,12 @@ export class SpacialBody {
         return this._pos;
     }
 
-    public get mass(): number {
-        return this._mass;
+    public get vel(): THREE.Vector3 {
+        return this._vel;
     }
 
-    public get radius(): number {
-        return this._radius;
+    public get mass(): number {
+        return this._mass;
     }
 
 }
