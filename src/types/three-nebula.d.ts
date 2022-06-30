@@ -1,5 +1,6 @@
 declare module 'three-nebula' {
     export default class ParticleSystem{
+        public constructor(three?: any, preParticles?: number, integrationType?: string)
         public addEmitter(e: Emitter): ParticleSystem;
         public addRenderer(r: SpriteRenderer): ParticleSystem;
         public update(delta: number): void;

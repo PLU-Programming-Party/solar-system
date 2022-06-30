@@ -2,7 +2,7 @@ import ParticleSystem, { Color, Emitter, Rate, Span, Position, SpriteRenderer, P
 import * as THREE from 'three'
 
 export default function nebulaSystem(scene: THREE.Scene, three: typeof THREE){
-    const system = new ParticleSystem();
+    const system = new ParticleSystem(three, 1000);
     const emitter: any = new Emitter();
     const color1: THREE.Color = new THREE.Color();
     const color2: THREE.Color = new THREE.Color();

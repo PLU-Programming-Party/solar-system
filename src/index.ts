@@ -50,7 +50,7 @@ light.position.set(sun.pos.x, sun.pos.y, sun.pos.z);
 
 let ambient = new THREE.AmbientLight(0x333333);
 
-scene.add(sunMesh);
+// scene.add(sunMesh);
 scene.add(earthMesh);
 scene.add(moonMesh);
 scene.add(light);
@@ -58,7 +58,24 @@ scene.add(ambient);
 camera.position.set(0, 0, 20);
 camera.lookAt(0,0,0); 
 
-const nebula = nebulaSystem(scene, THREE);
+// const nebula = nebulaSystem(scene, THREE);
+
+// Todo: Make own class or function
+
+const map = new THREE.TextureLoader().load( 'assets/star.png' );
+const starMaterial = new THREE.SpriteMaterial( { map: map } );
+
+const sprites: THREE.Sprite[] = [];
+
+const spriteCount = 1000;
+for (let i = 0; i < spriteCount; i++) {
+  const sprite = new THREE.Sprite(starMaterial);
+  sprite.position.set(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50);
+  sprite.scale.set(4, 4, 4);
+  sprites.push(sprite);
+}
+
+scene.add( ... sprites );
 
 let controls = new OrbitControls(camera, renderer.domElement);
 
@@ -72,7 +89,6 @@ function animate() {
   moonMesh.position.set(moon.pos.x * scale, moon.pos.y * scale, moon.pos.z * scale);
 
   renderer.render(scene, camera);
-  nebula.update(0);
   requestAnimationFrame(animate);
  
 };
