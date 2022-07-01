@@ -7,6 +7,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { SpacialBody } from './gravity/SpacialBody';
 import { PlanetarySystem } from './gravity/PlanetarySystem';
 import nebulaSystem from './Background'
+import { generateSprites } from './SpriteGeneration';
 
 let sun = new SpacialBody(
 	new THREE.Vector3(),
@@ -51,8 +52,8 @@ light.position.set(sun.pos.x, sun.pos.y, sun.pos.z);
 let ambient = new THREE.AmbientLight(0x333333);
 
 // scene.add(sunMesh);
-scene.add(earthMesh);
-scene.add(moonMesh);
+// scene.add(earthMesh);
+// scene.add(moonMesh);
 scene.add(light);
 scene.add(ambient);
 camera.position.set(0, 0, 20);
@@ -62,18 +63,7 @@ camera.lookAt(0,0,0);
 
 // Todo: Make own class or function
 
-const map = new THREE.TextureLoader().load( 'assets/star.png' );
-const starMaterial = new THREE.SpriteMaterial( { map: map } );
-
-const sprites: THREE.Sprite[] = [];
-
-const spriteCount = 1000;
-for (let i = 0; i < spriteCount; i++) {
-  const sprite = new THREE.Sprite(starMaterial);
-  sprite.position.set(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50);
-  sprite.scale.set(4, 4, 4);
-  sprites.push(sprite);
-}
+const sprites = generateSprites();
 
 scene.add( ... sprites );
 
@@ -109,8 +99,8 @@ const moonMaterial = new THREE.LineBasicMaterial({color:0x00ff00});
 const moonGeometry = new THREE.BufferGeometry().setFromPoints(moonSimulation);
 const moonLine = new THREE.Line(moonGeometry, moonMaterial);
 
-scene.add(earthLine);
-scene.add(moonLine);
+// scene.add(earthLine);
+// scene.add(moonLine);
 
 function fixedUpdate() {
   ps.accelerateSystem(deltaTime);
