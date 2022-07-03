@@ -51,21 +51,27 @@ light.position.set(sun.pos.x, sun.pos.y, sun.pos.z);
 
 let ambient = new THREE.AmbientLight(0x333333);
 
-// scene.add(sunMesh);
-// scene.add(earthMesh);
-// scene.add(moonMesh);
+scene.add(sunMesh);
+scene.add(earthMesh);
+scene.add(moonMesh);
 scene.add(light);
 scene.add(ambient);
 camera.position.set(0, 0, 20);
 camera.lookAt(0,0,0); 
 
-// const nebula = nebulaSystem(scene, THREE);
+const textureLoader = new THREE.TextureLoader();
+const seed = Math.random();
 
-// Todo: Make own class or function
-
-const sprites = generateSprites();
-
+const starMaterial = new THREE.SpriteMaterial( { map: textureLoader.load( 'assets/star.png' ) } );
+const sprites = generateSprites( [starMaterial], seed);
 scene.add( ... sprites );
+
+const totalNebulas = 10;
+const nebulaMaterials: THREE.SpriteMaterial[] = [];
+for (let i = 1; i <= totalNebulas; i++)
+  nebulaMaterials.push(new THREE.SpriteMaterial( { map: textureLoader.load( 'assets/nebula' + i + '.png' ) } ));
+const nebulas = generateSprites(nebulaMaterials, seed, 20, 5);
+scene.add( ... nebulas );
 
 let controls = new OrbitControls(camera, renderer.domElement);
 
@@ -99,8 +105,8 @@ const moonMaterial = new THREE.LineBasicMaterial({color:0x00ff00});
 const moonGeometry = new THREE.BufferGeometry().setFromPoints(moonSimulation);
 const moonLine = new THREE.Line(moonGeometry, moonMaterial);
 
-// scene.add(earthLine);
-// scene.add(moonLine);
+scene.add(earthLine);
+scene.add(moonLine);
 
 function fixedUpdate() {
   ps.accelerateSystem(deltaTime);
