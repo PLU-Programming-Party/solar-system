@@ -5,6 +5,8 @@ import camera from './Camera';
 import renderer from './Renderer';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { PlanetarySystem } from './gravity/PlanetarySystem';
+import nebulaSystem from './Background'
+import { generateSprites } from './SpriteGeneration';
 
 let ps = new PlanetarySystem();
 
@@ -25,6 +27,20 @@ scene.add(ambient);
 camera.position.set(0, 0, 500);
 camera.lookAt(0,0,0); 
 
+const textureLoader = new THREE.TextureLoader();
+const seed = Math.random();
+
+const starMaterial = new THREE.SpriteMaterial( { map: textureLoader.load( 'assets/star.png' ) } );
+const sprites = generateSprites( [starMaterial], seed);
+scene.add( ... sprites );
+
+const totalNebulas = 10;
+const nebulaMaterials: THREE.SpriteMaterial[] = [];
+for (let i = 1; i <= totalNebulas; i++)
+  nebulaMaterials.push(new THREE.SpriteMaterial( { map: textureLoader.load( 'assets/nebula' + i + '.png' ) } ));
+const nebulas = generateSprites(nebulaMaterials, seed, 20, 5);
+scene.add( ... nebulas );
+
 let controls = new OrbitControls(camera, renderer.domElement);
 
 //animation frame for cube
@@ -35,8 +51,8 @@ function animate() {
   ps.meshUpdate();
 
   renderer.render(scene, camera);
-
   requestAnimationFrame(animate);
+ 
 };
 
 
