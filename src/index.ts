@@ -4,97 +4,74 @@ import scene from './Scene';
 import camera from './Camera';
 import renderer from './Renderer';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import { SpacialBody } from './gravity/SpacialBody';
 import { PlanetarySystem } from './gravity/PlanetarySystem';
 
-let sun = new SpacialBody(
-	new THREE.Vector3(),
-	undefined,
-	696340000,
-	1410,
-	true
-);
-
-let earth = new SpacialBody(
-	new THREE.Vector3(150000000000, 0, 0),
-	new THREE.Vector3(0, 29800, 0),
-	6371000,
-	5510
-);
-
-let moon = new SpacialBody(
-  new THREE.Vector3(150000000000 + 384400000, 0, 0),
-  new THREE.Vector3(0, 29800 + 1022, 0),
-  1737400,
-  3340
-)
-
 let ps = new PlanetarySystem();
-ps.addBody(earth);
-ps.addBody(sun);
-ps.addBody(moon);
 
-let scale = 0.0000000001;
-let timeScale = 60 * 60 * 6;
+const sun = ps.constructCentralBody(10000);
+const earth = ps.constructPlanetaryBody(500, 500, sun.body);
+const moon = ps.constructPlanetaryBody(50, 10, earth.body);
+const xanadu = ps.constructPlanetaryBody(200, 1, sun.body);
 
-let radiusScale = scale * 10;
-let radiusScaleSun = scale * 10;
-
-const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(sun.radius * radiusScaleSun, 32, 16), new THREE.MeshBasicMaterial({ color: 0xFFFF00 }));
-const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(earth.radius * radiusScale, 32, 16), new THREE.MeshPhongMaterial({ color: 0x0000ff }));
-const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(moon.radius * radiusScale, 32, 16), new THREE.MeshPhongMaterial({ color: 0x888888 }));
+ps.addMeshes(scene);
 
 let light = new THREE.PointLight(0xFFFFFF);
-light.position.set(sun.pos.x, sun.pos.y, sun.pos.z);
+light.position.set(sun.body.pos.x, sun.body.pos.y, sun.body.pos.z);
 
 let ambient = new THREE.AmbientLight(0x333333);
 
-scene.add(sunMesh);
-scene.add(earthMesh);
-scene.add(moonMesh);
 scene.add(light);
 scene.add(ambient);
-camera.position.set(0, 0, 20);
+camera.position.set(0, 0, 500);
 camera.lookAt(0,0,0); 
 
 let controls = new OrbitControls(camera, renderer.domElement);
 
 //animation frame for cube
 function animate() {
-  // camera.position.set(earth.pos.x * scale, earth.pos.y * scale, .2);
+  // camera.position.set(earth.pos.x, earth.pos.y, .2);
   controls.update();
 
-  sunMesh.position.set(sun.pos.x * scale, sun.pos.y * scale, sun.pos.z * scale);
-  earthMesh.position.set(earth.pos.x * scale, earth.pos.y * scale, earth.pos.z * scale);
-  moonMesh.position.set(moon.pos.x * scale, moon.pos.y * scale, moon.pos.z * scale);
+  ps.meshUpdate();
 
   renderer.render(scene, camera);
 
   requestAnimationFrame(animate);
 };
 
+
 const fixedInterval = 20; // Interval time in milliseconds
-const deltaTime = fixedInterval / 1000 * timeScale;
 
-const approxYear = 368 * 24 * 60 * 60 / timeScale; // Semi-redundent "24 * 60 * 60 / timeScale"; only important if timeScale changes
-const simulationIterations = approxYear * 1000 / fixedInterval;
+const intervals = (2 * Math.PI * earth.body.pos.distanceTo(sun.body.pos)) / earth.body.vel.length() / (fixedInterval);
 
-let earthSimulation = ps.predictPath(earth, deltaTime, simulationIterations).map(p => p.multiplyScalar(scale));
-const earthMaterial = new THREE.LineBasicMaterial({color:0xff0000});
+let sunSimulation = ps.predictPath(sun.body, fixedInterval, intervals);
+const sunMaterial = new THREE.LineBasicMaterial({color:sun.mesh.material.color});
+const sunGeometry = new THREE.BufferGeometry().setFromPoints(sunSimulation);
+const sunLine = new THREE.Line(sunGeometry, sunMaterial);
+scene.add(sunLine);
+
+let earthSimulation = ps.predictPath(earth.body, fixedInterval, intervals);
+const earthMaterial = new THREE.LineBasicMaterial({color:earth.mesh.material.color});
 const earthGeometry = new THREE.BufferGeometry().setFromPoints(earthSimulation);
 const earthLine = new THREE.Line(earthGeometry, earthMaterial);
+scene.add(earthLine);
 
-let moonSimulation = ps.predictPath(moon, deltaTime, simulationIterations).map(p => p.multiplyScalar(scale));
-const moonMaterial = new THREE.LineBasicMaterial({color:0x00ff00});
+let moonSimulation = ps.predictPath(moon.body, fixedInterval, intervals);
+const moonMaterial = new THREE.LineBasicMaterial({color:moon.mesh.material.color});
 const moonGeometry = new THREE.BufferGeometry().setFromPoints(moonSimulation);
 const moonLine = new THREE.Line(moonGeometry, moonMaterial);
-
-scene.add(earthLine);
 scene.add(moonLine);
 
+const xanIntervals = 2 * Math.PI * xanadu.body.pos.distanceTo(sun.body.pos) / xanadu.body.vel.length() / fixedInterval;
+let xanSimulation = ps.predictPath(xanadu.body, fixedInterval, xanIntervals);
+const xanMaterial = new THREE.LineBasicMaterial({color:xanadu.mesh.material.color});
+const xanGeometry = new THREE.BufferGeometry().setFromPoints(xanSimulation);
+const xanLine = new THREE.Line(xanGeometry, xanMaterial);
+scene.add(xanLine);
+
 function fixedUpdate() {
-  ps.accelerateSystem(deltaTime);
-  ps.updateSystem(deltaTime);
+  ps.accelerateSystem(fixedInterval);
+  ps.updateSystem(fixedInterval);
 }
 
 requestAnimationFrame(animate);
