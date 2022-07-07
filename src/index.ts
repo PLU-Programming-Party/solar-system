@@ -20,7 +20,8 @@ const params = {
   exposure: 1,
   threshold: 0,
   bloomStrength: 1.5,
-  bloomRadius: 0
+  bloomRadius: 0,
+  pauseScene: false
 }
 
 // Post proc setup
@@ -44,6 +45,7 @@ gui.add( params, 'bloomStrength', 0, 3).onChange((val: number) => {
 gui.add( params, 'bloomRadius', 0, 1).onChange((val: number) => {
   bloomPass.radius = val;
 });
+gui.add( params, 'pauseScene');
 
 let ps = new PlanetarySystem();
 
@@ -123,6 +125,9 @@ const xanLine = new THREE.Line(xanGeometry, xanMaterial);
 scene.add(xanLine);
 
 function fixedUpdate() {
+  if(params.pauseScene){
+    return;
+  }
   ps.accelerateSystem(fixedInterval);
   ps.updateSystem(fixedInterval);
 }
