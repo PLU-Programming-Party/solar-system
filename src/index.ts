@@ -22,7 +22,8 @@ const params = {
   bloomStrength: 1.5,
   bloomRadius: 0,
   pauseScene: false,
-  showOrbit: false
+  showOrbit: false,
+  updateOrbit: false
 }
 
 // Post proc setup
@@ -48,6 +49,7 @@ gui.add( params, 'bloomRadius', 0, 1).onChange((val: number) => {
 });
 gui.add( params, 'pauseScene');
 gui.add( params, 'showOrbit');
+gui.add( params, 'updateOrbit');
 
 let ps = new PlanetarySystem();
 
@@ -123,8 +125,12 @@ const xanOrbit = createOrbitPath(xanadu, ps, xanIntervals, fixedInterval);
 scene.add(xanOrbit);
 
 function fixedUpdate() {
-  if(params.pauseScene){
-    return;
+
+  if(params.updateOrbit){
+    sunOrbit.geometry.setFromPoints(ps.predictPath(sun.body, fixedInterval, intervals));
+    earthOrbit.geometry.setFromPoints(ps.predictPath(earth.body, fixedInterval, intervals));
+    moonOrbit.geometry.setFromPoints(ps.predictPath(moon.body, fixedInterval, intervals));
+    xanOrbit.geometry.setFromPoints(ps.predictPath(xanadu.body, fixedInterval, xanIntervals));
   }
 
   if(params.showOrbit){
@@ -138,7 +144,11 @@ function fixedUpdate() {
     moonOrbit.visible = false;
     xanOrbit.visible = false;
   }
-  
+
+  if(params.pauseScene){
+    return;
+  }
+
   ps.accelerateSystem(fixedInterval);
   ps.updateSystem(fixedInterval);
 }
