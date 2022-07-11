@@ -109,20 +109,36 @@ function createOrbitPath(pBody: any, ps: PlanetarySystem, intervals: number, fix
   return line;
 }
 
-scene.add(createOrbitPath(sun, ps, intervals, fixedInterval));
+const sunOrbit = createOrbitPath(sun, ps, intervals, fixedInterval);
+scene.add(sunOrbit);
 
-scene.add(createOrbitPath(earth, ps, intervals, fixedInterval));
+const earthOrbit = createOrbitPath(earth, ps, intervals, fixedInterval);
+scene.add(earthOrbit);
 
-scene.add(createOrbitPath(moon, ps, intervals, fixedInterval));
+const moonOrbit = createOrbitPath(moon, ps, intervals, fixedInterval);
+scene.add(moonOrbit);
 
 const xanIntervals = 2 * Math.PI * xanadu.body.pos.distanceTo(sun.body.pos) / xanadu.body.vel.length() / fixedInterval;
-
-scene.add(createOrbitPath(xanadu, ps, xanIntervals, fixedInterval));
+const xanOrbit = createOrbitPath(xanadu, ps, xanIntervals, fixedInterval);
+scene.add(xanOrbit);
 
 function fixedUpdate() {
   if(params.pauseScene){
     return;
   }
+
+  if(params.showOrbit){
+    sunOrbit.visible = true;
+    earthOrbit.visible = true;
+    moonOrbit.visible = true;
+    xanOrbit.visible = true;
+  } else {
+    sunOrbit.visible = false;
+    earthOrbit.visible = false;
+    moonOrbit.visible = false;
+    xanOrbit.visible = false;
+  }
+  
   ps.accelerateSystem(fixedInterval);
   ps.updateSystem(fixedInterval);
 }
