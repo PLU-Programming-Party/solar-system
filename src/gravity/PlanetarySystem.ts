@@ -16,7 +16,7 @@ export class PlanetarySystem {
         const centralBody = new SpacialBody(new THREE.Vector3(), undefined, mass, true);
         
         const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
-        const material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff } );
+        const material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff * 100 } );
 
         const body = {
             body: centralBody,
@@ -27,6 +27,8 @@ export class PlanetarySystem {
         return body;
     }
 
+    earthNormalTexture = new THREE.TextureLoader().load('assets/earth_normal.jpg')
+
     public constructPlanetaryBody(distance: number, mass: number, orbitBody: SpacialBody) {
         const pos = (new THREE.Vector3(distance, 0, 0)).add(orbitBody.pos);
         const vel = (new THREE.Vector3(0, Math.sqrt(PlanetarySystem.G * orbitBody.mass / Math.abs(distance)), 0)).add(orbitBody.vel);
@@ -34,6 +36,9 @@ export class PlanetarySystem {
         
         const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
         const material = new THREE.MeshPhongMaterial( { color: Math.random() * 0xffffff } );
+        material.normalMap = this.earthNormalTexture;
+        material.normalScale = new THREE.Vector2(10, 10);
+        material.shininess = 0;
 
         const body = {
             body: planetaryBody,

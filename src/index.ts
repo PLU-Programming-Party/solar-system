@@ -7,6 +7,45 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { PlanetarySystem } from './gravity/PlanetarySystem';
 import nebulaSystem from './Background'
 import { generateSprites } from './SpriteGeneration';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
+import GUI from 'lil-gui';
+
+// GUI setup
+const gui = new GUI();
+
+const params = {
+  exposure: 1,
+  threshold: 0,
+  bloomStrength: 1.5,
+  bloomRadius: 0,
+  pauseScene: false
+}
+
+// Post proc setup
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+const bloomPass = new UnrealBloomPass( new THREE.Vector2(window.innerWidth, window.innerHeight), params.bloomStrength, params.bloomRadius, params.threshold);
+renderer.toneMappingExposure = Math.pow(params.exposure, 4);
+composer.addPass(bloomPass);
+
+gui.add( params, 'exposure', 0, 2).onChange((val: number) => {
+  renderer.toneMappingExposure = Math.pow(val, 4);
+});
+gui.add( params, 'threshold', 0, 1).onChange((val: number) => {
+  bloomPass.threshold = val;
+});
+gui.add( params, 'bloomStrength', 0, 3).onChange((val: number) => {
+  bloomPass.strength = val;
+});
+gui.add( params, 'bloomRadius', 0, 1).onChange((val: number) => {
+  bloomPass.radius = val;
+});
+gui.add( params, 'pauseScene');
 
 let ps = new PlanetarySystem();
 
@@ -50,7 +89,7 @@ function animate() {
 
   ps.meshUpdate();
 
-  renderer.render(scene, camera);
+  composer.render();
   requestAnimationFrame(animate);
  
 };
@@ -86,6 +125,9 @@ const xanLine = new THREE.Line(xanGeometry, xanMaterial);
 scene.add(xanLine);
 
 function fixedUpdate() {
+  if(params.pauseScene){
+    return;
+  }
   ps.accelerateSystem(fixedInterval);
   ps.updateSystem(fixedInterval);
 }

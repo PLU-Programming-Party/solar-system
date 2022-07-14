@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.18.3",
+    "lil-gui": "^0.16.1",
     "three": "^0.141.0",
     "three-nebula": "^10.0.3"
   }
