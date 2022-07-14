@@ -12,6 +12,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
 import GUI from 'lil-gui';
+import { specificOrbit } from './gravity/GravityCalc';
 
 // GUI setup
 const gui = new GUI();
@@ -21,7 +22,8 @@ const params = {
   threshold: 0,
   bloomStrength: 1.5,
   bloomRadius: 0,
-  pauseScene: false
+  pauseScene: false,
+  orbit: 10 
 }
 
 // Post proc setup
@@ -46,6 +48,8 @@ gui.add( params, 'bloomRadius', 0, 1).onChange((val: number) => {
   bloomPass.radius = val;
 });
 gui.add( params, 'pauseScene');
+gui.add( params, 'orbit');
+
 
 let ps = new PlanetarySystem();
 
@@ -130,6 +134,8 @@ function fixedUpdate() {
   }
   ps.accelerateSystem(fixedInterval);
   ps.updateSystem(fixedInterval);
+  params.orbit = specificOrbit(earth.body, sun.body);
+  console.log(params.orbit);
 }
 
 requestAnimationFrame(animate);
