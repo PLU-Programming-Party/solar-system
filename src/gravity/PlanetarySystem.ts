@@ -124,7 +124,7 @@ export class PlanetarySystem {
             sb.mesh.position.set(sb.body.pos.x, sb.body.pos.y, sb.body.pos.z);
     }
 
-    private addBody(body: any) {
+    public addBody(body: any) {
         this._bodies.push(body);
     }
     

@@ -12,7 +12,8 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
 import GUI from 'lil-gui';
-import { specificOrbit } from './gravity/GravityCalc';
+import { KeplarElements, keplarToCartesian, specificOrbit } from './gravity/GravityCalc';
+import { SpacialBody } from './gravity/SpacialBody';
 
 // GUI setup
 const gui = new GUI();
@@ -54,9 +55,38 @@ gui.add( params, 'orbit');
 let ps = new PlanetarySystem();
 
 const sun = ps.constructCentralBody(10000);
-const earth = ps.constructPlanetaryBody(500, 500, sun.body);
-const moon = ps.constructPlanetaryBody(50, 10, earth.body);
-const xanadu = ps.constructPlanetaryBody(200, 1, sun.body);
+
+const keplarElements: KeplarElements = {
+  eccentricity: 0,
+  semi_major_axis: 250,
+  inclination: 0,
+  ascending_node: 0,
+  periapsis: 0,
+  true_anomaly: 0
+};
+
+const initialState = keplarToCartesian(sun.body, 500, keplarElements);
+
+const earth = {
+  body: new SpacialBody(initialState.pos, initialState.vel, 500),
+  mesh: new THREE.Mesh(new THREE.SphereGeometry(5, 32, 16), new THREE.MeshPhongMaterial({color: 0x0000ff}))
+};
+ps.addBody(earth);
+
+const keplarElementNames = Object.keys(keplarElements);
+
+const keplarGui = gui.addFolder("Keplar Elements");
+for (let name of keplarElementNames) {
+  keplarGui.add(keplarElements, name).onChange((val: number) => {
+    const stateVectors = keplarToCartesian(sun.body, 500, keplarElements);
+    earth.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
+    earth.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z)
+  });
+}
+
+
+// const moon = ps.constructPlanetaryBody(50, 10, earth.body);
+// const xanadu = ps.constructPlanetaryBody(200, 1, sun.body);
 
 ps.addMeshes(scene);
 
@@ -115,18 +145,18 @@ const earthGeometry = new THREE.BufferGeometry().setFromPoints(earthSimulation);
 const earthLine = new THREE.Line(earthGeometry, earthMaterial);
 scene.add(earthLine);
 
-let moonSimulation = ps.predictPath(moon.body, fixedInterval, intervals);
-const moonMaterial = new THREE.LineBasicMaterial({color:moon.mesh.material.color});
-const moonGeometry = new THREE.BufferGeometry().setFromPoints(moonSimulation);
-const moonLine = new THREE.Line(moonGeometry, moonMaterial);
-scene.add(moonLine);
+// let moonSimulation = ps.predictPath(moon.body, fixedInterval, intervals);
+// const moonMaterial = new THREE.LineBasicMaterial({color:moon.mesh.material.color});
+// const moonGeometry = new THREE.BufferGeometry().setFromPoints(moonSimulation);
+// const moonLine = new THREE.Line(moonGeometry, moonMaterial);
+// scene.add(moonLine);
 
-const xanIntervals = 2 * Math.PI * xanadu.body.pos.distanceTo(sun.body.pos) / xanadu.body.vel.length() / fixedInterval;
-let xanSimulation = ps.predictPath(xanadu.body, fixedInterval, xanIntervals);
-const xanMaterial = new THREE.LineBasicMaterial({color:xanadu.mesh.material.color});
-const xanGeometry = new THREE.BufferGeometry().setFromPoints(xanSimulation);
-const xanLine = new THREE.Line(xanGeometry, xanMaterial);
-scene.add(xanLine);
+// const xanIntervals = 2 * Math.PI * xanadu.body.pos.distanceTo(sun.body.pos) / xanadu.body.vel.length() / fixedInterval;
+// let xanSimulation = ps.predictPath(xanadu.body, fixedInterval, xanIntervals);
+// const xanMaterial = new THREE.LineBasicMaterial({color:xanadu.mesh.material.color});
+// const xanGeometry = new THREE.BufferGeometry().setFromPoints(xanSimulation);
+// const xanLine = new THREE.Line(xanGeometry, xanMaterial);
+// scene.add(xanLine);
 
 function fixedUpdate() {
   if(params.pauseScene){
