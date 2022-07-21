@@ -78,7 +78,7 @@ const keplarElementNames = Object.keys(keplarElements);
 
 const keplarGui = gui.addFolder("Keplar Elements");
 for (let name of keplarElementNames) {
-  keplarGui.add(keplarElements, name).onChange((val: number) => {
+  keplarGui.add(keplarElements, name, 0 , 360).onChange((val: number) => {
     const stateVectors = keplarToCartesian(sun.body, 500, keplarElements);
     earth.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
     earth.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z)

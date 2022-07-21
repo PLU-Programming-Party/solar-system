@@ -1,7 +1,8 @@
 import { SpacialBody } from "./SpacialBody";
 import * as THREE from 'three';
+import { Gravity } from "./GravityConstant";
 export class PlanetarySystem {
-    private static readonly G = .00005;
+    private static readonly G = Gravity;
 
     private _bodies: {body: SpacialBody, mesh: THREE.Mesh}[];
 

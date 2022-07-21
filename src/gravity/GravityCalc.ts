@@ -15,16 +15,18 @@ export function keplarToCartesian(sb1: SpacialBody, mass: number, elements: Kepl
     const {
         eccentricity: e, 
         semi_major_axis: a, 
-        inclination: i, 
-        ascending_node: capOmega, 
-        periapsis: littleOmega, 
-        true_anomaly: f
     } = elements;
 
+    const i = elements.inclination * Math.PI / 180;
+    const capOmega = elements.ascending_node * Math.PI / 180;
+    const littleOmega = elements.periapsis * Math.PI / 180;
+    const f = elements.true_anomaly * Math.PI / 180;
+
     // Standard gravitational parameter
-    const mu = Gravity * (sb1.mass + mass);
+    const mu = Gravity * (sb1.mass);
     // Eccentric Anomaly
-    const E = a * (1 - Math.pow(e, 2)) / (1 + e * Math.cos(f));
+    const E = Math.atan2(Math.sqrt(1 - e * e) * Math.sin(f), e + Math.cos(f));
+    console.log(E);
 
     const distance = a * (1 - e * Math.cos(E));
 
