@@ -24,7 +24,8 @@ const params = {
   bloomStrength: 1.5,
   bloomRadius: 0,
   pauseScene: false,
-  orbit: 10 
+  showOrbit: false,
+  updateOrbit: false
 }
 
 // Post proc setup
@@ -49,8 +50,8 @@ gui.add( params, 'bloomRadius', 0, 1).onChange((val: number) => {
   bloomPass.radius = val;
 });
 gui.add( params, 'pauseScene');
-gui.add( params, 'orbit');
-
+gui.add( params, 'showOrbit');
+gui.add( params, 'updateOrbit');
 
 let ps = new PlanetarySystem();
 
@@ -133,39 +134,56 @@ const fixedInterval = 20; // Interval time in milliseconds
 
 const intervals = (2 * Math.PI * earth.body.pos.distanceTo(sun.body.pos)) / earth.body.vel.length() / (fixedInterval);
 
-let sunSimulation = ps.predictPath(sun.body, fixedInterval, intervals);
-const sunMaterial = new THREE.LineBasicMaterial({color:sun.mesh.material.color});
-const sunGeometry = new THREE.BufferGeometry().setFromPoints(sunSimulation);
-const sunLine = new THREE.Line(sunGeometry, sunMaterial);
-scene.add(sunLine);
+function createOrbitPath(pBody: any, ps: PlanetarySystem, intervals: number, fixedInterval: number) {
+  let simulation = ps.predictPath(pBody.body, fixedInterval, intervals);
+  const material = new THREE.LineBasicMaterial({color: pBody.mesh.material.color});
+  const geometry = new THREE.BufferGeometry().setFromPoints(simulation);
+  const line = new THREE.Line(geometry, material);
+  return line;
+}
 
-let earthSimulation = ps.predictPath(earth.body, fixedInterval, intervals);
-const earthMaterial = new THREE.LineBasicMaterial({color:earth.mesh.material.color});
-const earthGeometry = new THREE.BufferGeometry().setFromPoints(earthSimulation);
-const earthLine = new THREE.Line(earthGeometry, earthMaterial);
-scene.add(earthLine);
+const sunOrbit = createOrbitPath(sun, ps, intervals, fixedInterval);
+scene.add(sunOrbit);
 
-// let moonSimulation = ps.predictPath(moon.body, fixedInterval, intervals);
-// const moonMaterial = new THREE.LineBasicMaterial({color:moon.mesh.material.color});
-// const moonGeometry = new THREE.BufferGeometry().setFromPoints(moonSimulation);
-// const moonLine = new THREE.Line(moonGeometry, moonMaterial);
-// scene.add(moonLine);
+const earthOrbit = createOrbitPath(earth, ps, intervals, fixedInterval);
+scene.add(earthOrbit);
+
+// const moonOrbit = createOrbitPath(moon, ps, intervals, fixedInterval);
+// scene.add(moonOrbit);
 
 // const xanIntervals = 2 * Math.PI * xanadu.body.pos.distanceTo(sun.body.pos) / xanadu.body.vel.length() / fixedInterval;
-// let xanSimulation = ps.predictPath(xanadu.body, fixedInterval, xanIntervals);
-// const xanMaterial = new THREE.LineBasicMaterial({color:xanadu.mesh.material.color});
-// const xanGeometry = new THREE.BufferGeometry().setFromPoints(xanSimulation);
-// const xanLine = new THREE.Line(xanGeometry, xanMaterial);
-// scene.add(xanLine);
+// const xanOrbit = createOrbitPath(xanadu, ps, xanIntervals, fixedInterval);
+// scene.add(xanOrbit);
 
 function fixedUpdate() {
+
+  if(params.updateOrbit){
+    sunOrbit.geometry.setFromPoints(ps.predictPath(sun.body, fixedInterval, intervals));
+    earthOrbit.geometry.setFromPoints(ps.predictPath(earth.body, fixedInterval, intervals));
+    // moonOrbit.geometry.setFromPoints(ps.predictPath(moon.body, fixedInterval, intervals));
+    // xanOrbit.geometry.setFromPoints(ps.predictPath(xanadu.body, fixedInterval, xanIntervals));
+  }
+
+  if(params.showOrbit){
+    sunOrbit.visible = true;
+    earthOrbit.visible = true;
+    // moonOrbit.visible = true;
+    // xanOrbit.visible = true;
+  } else {
+    sunOrbit.visible = false;
+    earthOrbit.visible = false;
+    // moonOrbit.visible = false;
+    // xanOrbit.visible = false;
+  }
+
   if(params.pauseScene){
     return;
   }
+
   ps.accelerateSystem(fixedInterval);
   ps.updateSystem(fixedInterval);
-  params.orbit = specificOrbit(earth.body, sun.body);
-  console.log(params.orbit);
+  // params.orbit = specificOrbit(earth.body, sun.body);
+  // console.log(params.orbit);
 }
 
 requestAnimationFrame(animate);
