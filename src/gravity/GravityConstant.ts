@@ -1,1 +1,2 @@
-export const Gravity = .00005
+const G = .00003;
+export default G;

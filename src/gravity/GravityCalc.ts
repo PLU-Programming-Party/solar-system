@@ -1,5 +1,5 @@
 import { SpacialBody } from "./SpacialBody";
-import { Gravity } from "./GravityConstant";
+import G from "./GravityConstant";
 import { Vector3, Euler } from "three";
 
 export type KeplarElements = {
@@ -11,7 +11,7 @@ export type KeplarElements = {
     true_anomaly: number
 };
 
-export function keplarToCartesian(sb1: SpacialBody, mass: number, elements: KeplarElements): {pos: Vector3, vel: Vector3} {
+export function keplarToCartesian(centralBody: SpacialBody, mass: number, elements: KeplarElements): {pos: Vector3, vel: Vector3} {
     const {
         eccentricity: e, 
         semi_major_axis: a, 
@@ -23,32 +23,30 @@ export function keplarToCartesian(sb1: SpacialBody, mass: number, elements: Kepl
     const f = elements.true_anomaly * Math.PI / 180;
 
     // Standard gravitational parameter
-    const mu = Gravity * (sb1.mass);
+    const mu = G * (centralBody.mass);
     // Eccentric Anomaly
     const E = Math.atan2(Math.sqrt(1 - e * e) * Math.sin(f), e + Math.cos(f));
-    console.log(E);
 
     const distance = a * (1 - e * Math.cos(E));
 
     const pos = new Vector3(Math.cos(f), Math.sin(f), 0).multiplyScalar(distance);
     const vel = new Vector3(-Math.sin(E), Math.sqrt(1 - e * e) * Math.cos(E), 0).multiplyScalar(Math.sqrt(mu * a) / distance);
 
-    const xRotation = new Euler(0, 0, -capOmega);
-    const yRotation = new Euler(-i, 0, 0);
-    const zRotation = new Euler(0, 0, -littleOmega);
+    const xRotation = new Euler(0, 0, capOmega);
+    const yRotation = new Euler(i, 0, 0);
+    const zRotation = new Euler(0, 0, littleOmega);
 
-    pos.applyEuler(xRotation);
-    pos.applyEuler(yRotation);
     pos.applyEuler(zRotation);
+    pos.applyEuler(yRotation);
+    pos.applyEuler(xRotation);
 
-    vel.applyEuler(xRotation);
-    vel.applyEuler(yRotation);
     vel.applyEuler(zRotation);
+    vel.applyEuler(yRotation);
+    vel.applyEuler(xRotation);
 
-    pos.add(sb1.pos);
-    vel.add(sb1.vel);
+    pos.add(centralBody.pos);
+    vel.add(centralBody.vel);
     return {pos, vel};
-
 }
 
 export function specificOrbit(spacialBody1: SpacialBody, spacialBody2: SpacialBody):number{
@@ -57,7 +55,7 @@ export function specificOrbit(spacialBody1: SpacialBody, spacialBody2: SpacialBo
     //u - masses of the bodies multiplied by the gravitational constant
     //r - distance between the two points
     const v = spacialBody2.vel.distanceTo(spacialBody1.vel)
-    const u = (spacialBody2.mass + spacialBody1.mass)*Gravity
+    const u = (spacialBody2.mass + spacialBody1.mass)*G
     const r = spacialBody2.pos.distanceTo(spacialBody1.pos)
 
     return Math.pow(v, 2) / 2 - u / r;

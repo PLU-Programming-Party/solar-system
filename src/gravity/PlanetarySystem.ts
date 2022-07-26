@@ -1,10 +1,12 @@
 import { SpacialBody } from "./SpacialBody";
 import * as THREE from 'three';
-import { Gravity } from "./GravityConstant";
+import G from "./GravityConstant";
+export type entity = {
+    body: SpacialBody,
+    mesh: THREE.Mesh
+}
 export class PlanetarySystem {
-    private static readonly G = Gravity;
-
-    private _bodies: {body: SpacialBody, mesh: THREE.Mesh}[];
+    private _bodies: entity[];
 
     /**
      * Creates instance of PlanetarySystem
@@ -17,7 +19,7 @@ export class PlanetarySystem {
         const centralBody = new SpacialBody(new THREE.Vector3(), undefined, mass, true);
         
         const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
-        const material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff * 100 } );
+        const material = new THREE.MeshBasicMaterial( { color: 0x9D00FF } );
 
         const body = {
             body: centralBody,
@@ -32,7 +34,7 @@ export class PlanetarySystem {
 
     public constructPlanetaryBody(distance: number, mass: number, orbitBody: SpacialBody) {
         const pos = (new THREE.Vector3(distance, 0, 0)).add(orbitBody.pos);
-        const vel = (new THREE.Vector3(0, Math.sqrt(PlanetarySystem.G * orbitBody.mass / Math.abs(distance)), 0)).add(orbitBody.vel);
+        const vel = (new THREE.Vector3(0, Math.sqrt(G * orbitBody.mass / Math.abs(distance)), 0)).add(orbitBody.vel);
         const planetaryBody = new SpacialBody(pos, vel, mass);
         
         const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
@@ -91,7 +93,7 @@ export class PlanetarySystem {
                 const compareBody = compare.body;
                 if (body.id !== compareBody.id) {
                     // Calculate force magnitude G * m1 * m2 / r^2
-                    let force = PlanetarySystem.G * body.mass * compareBody.mass / Math.pow(body.pos.distanceTo(compareBody.pos), 2);
+                    let force = G * body.mass * compareBody.mass / Math.pow(body.pos.distanceTo(compareBody.pos), 2);
                     
                     // Calculate force vector direction
                     let direction = compareBody.pos.clone();
@@ -125,7 +127,7 @@ export class PlanetarySystem {
             sb.mesh.position.set(sb.body.pos.x, sb.body.pos.y, sb.body.pos.z);
     }
 
-    public addBody(body: any) {
+    public addBody(body: entity) {
         this._bodies.push(body);
     }
     
