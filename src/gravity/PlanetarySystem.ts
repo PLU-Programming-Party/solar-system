@@ -1,61 +1,44 @@
 import { SpacialBody } from "./SpacialBody";
 import * as THREE from 'three';
 import G from "./GravityConstant";
+import { KeplarElements, keplarToCartesian } from "./GravityCalc";
+
+export type OnChangeCallback = (x: number, y: number, z: number) => void;
+
 export type entity = {
     body: SpacialBody,
-    mesh: THREE.Mesh
+    onPositionChange: OnChangeCallback
 }
+
 export class PlanetarySystem {
     private _bodies: entity[];
 
-    /**
-     * Creates instance of PlanetarySystem
-     */
     constructor() {
         this._bodies = [];
     }
+    // TODO: NO MORE ENTITIES! USE SPACIALBODY INSTEAD
 
-    public constructCentralBody(mass: number) {
-        const centralBody = new SpacialBody(new THREE.Vector3(), undefined, mass, true);
-        
-        const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
-        const material = new THREE.MeshBasicMaterial( { color: 0x9D00FF } );
+    public constructBody(mass: number, position: THREE.Vector3, velocity: THREE.Vector3, onPositionChange: OnChangeCallback): entity {
+        const body = new SpacialBody(position, velocity, mass);
 
-        const body = {
-            body: centralBody,
-            mesh: new THREE.Mesh(geometry, material)
+        const bodyEntity = {
+            body,
+            onPositionChange
         };
-        
-        this.addBody(body);
-        return body;
+
+        this.addBody(bodyEntity);
+        return bodyEntity;
     }
 
-    earthNormalTexture = new THREE.TextureLoader().load('assets/earth_normal.jpg')
-
-    public constructPlanetaryBody(distance: number, mass: number, orbitBody: SpacialBody) {
-        const pos = (new THREE.Vector3(distance, 0, 0)).add(orbitBody.pos);
-        const vel = (new THREE.Vector3(0, Math.sqrt(G * orbitBody.mass / Math.abs(distance)), 0)).add(orbitBody.vel);
-        const planetaryBody = new SpacialBody(pos, vel, mass);
-        
-        const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
-        const material = new THREE.MeshPhongMaterial( { color: Math.random() * 0xffffff } );
-        material.normalMap = this.earthNormalTexture;
-        material.normalScale = new THREE.Vector2(10, 10);
-        material.shininess = 0;
-
-        const body = {
-            body: planetaryBody,
-            mesh: new THREE.Mesh(geometry, material)
-        };
-        
-        this.addBody(body);
-        return body;
+    public constructBodyRelative(mass: number, relativeBody: SpacialBody, elements: KeplarElements, onPositionChange: OnChangeCallback): entity{
+        const {pos, vel} = keplarToCartesian(relativeBody, mass, elements);
+        return this.constructBody(mass, pos, vel, onPositionChange);
     }
 
-    public clone(): PlanetarySystem {
+    clone(): PlanetarySystem {
         let newSystem = new PlanetarySystem();
         for (const body of this._bodies)
-            newSystem.addBody({ body: body.body.clone(), mesh: body.mesh.clone()});
+            newSystem.addBody({ body: body.body.clone(), onPositionChange: null });
         return newSystem;
     }
 
@@ -74,11 +57,6 @@ export class PlanetarySystem {
         }
 
         return positions;
-    }
-
-    public addMeshes(scene: THREE.Scene) {
-        for (const sb of this._bodies)
-            scene.add(sb.mesh);
     }
 
     /**
@@ -118,17 +96,23 @@ export class PlanetarySystem {
      * Calls update function for each body
      */
     public updateSystem(time: number) {
-        for (const sb of this._bodies)
+        for (const sb of this._bodies) {
             sb.body.update(time);
+            sb.onPositionChange?.(sb.body.pos.x, sb.body.pos.y, sb.body.pos.z);
+        }
     }
 
-    public meshUpdate() {
-        for (const sb of this._bodies)
-            sb.mesh.position.set(sb.body.pos.x, sb.body.pos.y, sb.body.pos.z);
-    }
-
-    public addBody(body: entity) {
+    addBody(body: entity) {
         this._bodies.push(body);
-    }
-    
+    } //TODO: UpdateBodyRelative instead of addBody. 
 }
+
+//garbage.txt
+
+    // Texturing mesh
+    //earthNormalTexture = new THREE.TextureLoader().load('assets/earth_normal.jpg')
+    // const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
+        // const material = new THREE.MeshPhongMaterial( { color: Math.random() * 0xffffff } );
+        // material.normalMap = this.earthNormalTexture;
+        // material.normalScale = new THREE.Vector2(10, 10);
+        // material.shininess = 0;

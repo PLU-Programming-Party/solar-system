@@ -10,20 +10,27 @@ import { SpacialBody } from './gravity/SpacialBody';
 import cameraController from './CameraControls';
 import composer from './Composer';
 import G from './gravity/GravityConstant';
+import { createEarthMesh, createSunMesh } from './render/PlanetaryRenderer';
+
+
+//TODO: Create a more comprehensive testing suite
+
+function configureGUI(){
+  //TODO: add gui for scene params
+}
 
 const sceneParams = {
   pauseScene: false,
   showOrbit: true,
   updateOrbit: true
 }
+
 const sceneGUI = gui.addFolder('Scene Controls');
 sceneGUI.add( sceneParams, 'pauseScene').name('Pause Scene');
 sceneGUI.add( sceneParams, 'showOrbit').name('Show Orbit');
 sceneGUI.add( sceneParams, 'updateOrbit').name('Update Orbit');
 
 let ps = new PlanetarySystem();
-
-const sun = ps.constructCentralBody(10000);
 
 const keplarElements: KeplarElements = {
   eccentricity: 0,
@@ -34,13 +41,15 @@ const keplarElements: KeplarElements = {
   true_anomaly: 0
 };
 
-const initialState = keplarToCartesian(sun.body, 500, keplarElements);
+const sunMass = 10000;
+const sunMesh = createSunMesh(sunMass);
+scene.add(sunMesh);
+const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), (x,y,z) => sunMesh.position.set(x,y,z));
 
-const earth = {
-  body: new SpacialBody(initialState.pos, initialState.vel, 500),
-  mesh: new THREE.Mesh(new THREE.SphereGeometry(5, 32, 16), new THREE.MeshPhongMaterial({color: 0x0000ff}))
-};
-ps.addBody(earth);
+const earthMass = 500; //TODO: make work
+const earthMesh = createEarthMesh(earthMass);
+scene.add(earthMesh);
+const earth = ps.constructBodyRelative(earthMass, sun.body, keplarElements, (x,y,z) => earthMesh.position.set(x,y,z));
 
 const fixedInterval = 20; // Interval time in milliseconds
 let intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.body.mass)) / fixedInterval;
@@ -58,21 +67,6 @@ keplarGui.add(keplarElements, 'inclination', 0, 360).name('Inclination');
 keplarGui.add(keplarElements, 'ascending_node', 0, 360).name('Angle of Asc. Node');
 keplarGui.add(keplarElements, 'periapsis', 0, 360).name('Periapsis');
 keplarGui.add(keplarElements, 'true_anomaly', 0, 360).name('True Anomaly');
-
-// const keplarElementNames = Object.keys(keplarElements);
-// for (let name of keplarElementNames) {
-//   keplarGui.add(keplarElements, name, 0 , 360).onChange((val: number) => {
-//     const stateVectors = keplarToCartesian(sun.body, 500, keplarElements);
-//     earth.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
-//     earth.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
-//   });
-// }
-
-
-// const moon = ps.constructPlanetaryBody(50, 10, earth.body);
-// const xanadu = ps.constructPlanetaryBody(200, 1, sun.body);
-
-ps.addMeshes(scene);
 
 let light = new THREE.PointLight(0xFFFFFF);
 light.position.set(sun.body.pos.x, sun.body.pos.y, sun.body.pos.z);
@@ -103,8 +97,6 @@ function animate() {
   // camera.position.set(earth.pos.x, earth.pos.y, .2);
   cameraController.update();
 
-  ps.meshUpdate();
-
   composer.render();
   requestAnimationFrame(animate);
  
@@ -112,7 +104,7 @@ function animate() {
 
 function createOrbitPath(pBody: any, ps: PlanetarySystem, intervals: number, fixedInterval: number) {
   let simulation = ps.predictPath(pBody.body, fixedInterval, intervals);
-  const material = new THREE.LineBasicMaterial({color: pBody.mesh.material.color});
+  const material = new THREE.LineBasicMaterial({color: 0x999999});
   const geometry = new THREE.BufferGeometry().setFromPoints(simulation);
   const line = new THREE.Line(geometry, material);
   return line;
@@ -124,32 +116,19 @@ scene.add(sunOrbit);
 const earthOrbit = createOrbitPath(earth, ps, intervals, fixedInterval);
 scene.add(earthOrbit);
 
-// const moonOrbit = createOrbitPath(moon, ps, intervals, fixedInterval);
-// scene.add(moonOrbit);
-
-// const xanIntervals = 2 * Math.PI * xanadu.body.pos.distanceTo(sun.body.pos) / xanadu.body.vel.length() / fixedInterval;
-// const xanOrbit = createOrbitPath(xanadu, ps, xanIntervals, fixedInterval);
-// scene.add(xanOrbit);
-
 function fixedUpdate() {
 
   if(sceneParams.updateOrbit){
     sunOrbit.geometry.setFromPoints(ps.predictPath(sun.body, fixedInterval, intervals));
     earthOrbit.geometry.setFromPoints(ps.predictPath(earth.body, fixedInterval, intervals));
-    // moonOrbit.geometry.setFromPoints(ps.predictPath(moon.body, fixedInterval, intervals));
-    // xanOrbit.geometry.setFromPoints(ps.predictPath(xanadu.body, fixedInterval, xanIntervals));
   }
 
   if(sceneParams.showOrbit){
     sunOrbit.visible = true;
     earthOrbit.visible = true;
-    // moonOrbit.visible = true;
-    // xanOrbit.visible = true;
   } else {
     sunOrbit.visible = false;
     earthOrbit.visible = false;
-    // moonOrbit.visible = false;
-    // xanOrbit.visible = false;
   }
 
   if(sceneParams.pauseScene){
