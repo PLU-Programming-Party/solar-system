@@ -2,56 +2,24 @@ import * as _ from 'lodash';
 import * as THREE from 'three';
 import scene from './Scene';
 import camera from './Camera';
-import renderer from './Renderer';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { PlanetarySystem } from './gravity/PlanetarySystem';
-import nebulaSystem from './Background'
 import { generateSprites } from './SpriteGeneration';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
-import GUI from 'lil-gui';
-import { KeplarElements, keplarToCartesian, specificOrbit } from './gravity/GravityCalc';
+import gui from './GUI';
+import { KeplarElements, keplarToCartesian } from './gravity/GravityCalc';
 import { SpacialBody } from './gravity/SpacialBody';
+import cameraController from './CameraControls';
+import composer from './Composer';
+import G from './gravity/GravityConstant';
 
-// GUI setup
-const gui = new GUI();
-
-const params = {
-  exposure: 1,
-  threshold: 0,
-  bloomStrength: 1.5,
-  bloomRadius: 0,
+const sceneParams = {
   pauseScene: false,
-  showOrbit: false,
-  updateOrbit: false
+  showOrbit: true,
+  updateOrbit: true
 }
-
-// Post proc setup
-const composer = new EffectComposer(renderer);
-const renderPass = new RenderPass(scene, camera);
-composer.addPass(renderPass);
-
-const bloomPass = new UnrealBloomPass( new THREE.Vector2(window.innerWidth, window.innerHeight), params.bloomStrength, params.bloomRadius, params.threshold);
-renderer.toneMappingExposure = Math.pow(params.exposure, 4);
-composer.addPass(bloomPass);
-
-gui.add( params, 'exposure', 0, 2).onChange((val: number) => {
-  renderer.toneMappingExposure = Math.pow(val, 4);
-});
-gui.add( params, 'threshold', 0, 1).onChange((val: number) => {
-  bloomPass.threshold = val;
-});
-gui.add( params, 'bloomStrength', 0, 3).onChange((val: number) => {
-  bloomPass.strength = val;
-});
-gui.add( params, 'bloomRadius', 0, 1).onChange((val: number) => {
-  bloomPass.radius = val;
-});
-gui.add( params, 'pauseScene');
-gui.add( params, 'showOrbit');
-gui.add( params, 'updateOrbit');
+const sceneGUI = gui.addFolder('Scene Controls');
+sceneGUI.add( sceneParams, 'pauseScene').name('Pause Scene');
+sceneGUI.add( sceneParams, 'showOrbit').name('Show Orbit');
+sceneGUI.add( sceneParams, 'updateOrbit').name('Update Orbit');
 
 let ps = new PlanetarySystem();
 
@@ -74,16 +42,31 @@ const earth = {
 };
 ps.addBody(earth);
 
-const keplarElementNames = Object.keys(keplarElements);
+const fixedInterval = 20; // Interval time in milliseconds
+let intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.body.mass)) / fixedInterval;
 
 const keplarGui = gui.addFolder("Keplar Elements");
-for (let name of keplarElementNames) {
-  keplarGui.add(keplarElements, name, 0 , 360).onChange((val: number) => {
-    const stateVectors = keplarToCartesian(sun.body, 500, keplarElements);
-    earth.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
-    earth.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z)
-  });
-}
+keplarGui.onChange(() => {
+  intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.body.mass)) / fixedInterval;
+  const stateVectors = keplarToCartesian(sun.body, 500, keplarElements);
+  earth.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
+  earth.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
+})
+keplarGui.add(keplarElements, 'eccentricity', 0, 1).name('Eccentricity');
+keplarGui.add(keplarElements, 'semi_major_axis', 100, 1000).name('Semi-Major Axis');
+keplarGui.add(keplarElements, 'inclination', 0, 360).name('Inclination');
+keplarGui.add(keplarElements, 'ascending_node', 0, 360).name('Angle of Asc. Node');
+keplarGui.add(keplarElements, 'periapsis', 0, 360).name('Periapsis');
+keplarGui.add(keplarElements, 'true_anomaly', 0, 360).name('True Anomaly');
+
+// const keplarElementNames = Object.keys(keplarElements);
+// for (let name of keplarElementNames) {
+//   keplarGui.add(keplarElements, name, 0 , 360).onChange((val: number) => {
+//     const stateVectors = keplarToCartesian(sun.body, 500, keplarElements);
+//     earth.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
+//     earth.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
+//   });
+// }
 
 
 // const moon = ps.constructPlanetaryBody(50, 10, earth.body);
@@ -115,12 +98,10 @@ for (let i = 1; i <= totalNebulas; i++)
 const nebulas = generateSprites(nebulaMaterials, seed, 20, 5);
 scene.add( ... nebulas );
 
-let controls = new OrbitControls(camera, renderer.domElement);
-
 //animation frame for cube
 function animate() {
   // camera.position.set(earth.pos.x, earth.pos.y, .2);
-  controls.update();
+  cameraController.update();
 
   ps.meshUpdate();
 
@@ -128,11 +109,6 @@ function animate() {
   requestAnimationFrame(animate);
  
 };
-
-
-const fixedInterval = 20; // Interval time in milliseconds
-
-const intervals = (2 * Math.PI * earth.body.pos.distanceTo(sun.body.pos)) / earth.body.vel.length() / (fixedInterval);
 
 function createOrbitPath(pBody: any, ps: PlanetarySystem, intervals: number, fixedInterval: number) {
   let simulation = ps.predictPath(pBody.body, fixedInterval, intervals);
@@ -157,14 +133,14 @@ scene.add(earthOrbit);
 
 function fixedUpdate() {
 
-  if(params.updateOrbit){
+  if(sceneParams.updateOrbit){
     sunOrbit.geometry.setFromPoints(ps.predictPath(sun.body, fixedInterval, intervals));
     earthOrbit.geometry.setFromPoints(ps.predictPath(earth.body, fixedInterval, intervals));
     // moonOrbit.geometry.setFromPoints(ps.predictPath(moon.body, fixedInterval, intervals));
     // xanOrbit.geometry.setFromPoints(ps.predictPath(xanadu.body, fixedInterval, xanIntervals));
   }
 
-  if(params.showOrbit){
+  if(sceneParams.showOrbit){
     sunOrbit.visible = true;
     earthOrbit.visible = true;
     // moonOrbit.visible = true;
@@ -176,7 +152,7 @@ function fixedUpdate() {
     // xanOrbit.visible = false;
   }
 
-  if(params.pauseScene){
+  if(sceneParams.pauseScene){
     return;
   }
 
