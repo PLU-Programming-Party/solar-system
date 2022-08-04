@@ -3,6 +3,22 @@ import SimplexNoise from 'simplex-noise';
 
 let earthNormalTexture: THREE.Texture;
 
+export type OrbitUpdater = (points: THREE.Vector3[]) => void;
+
+export function createOrbitPath(points: THREE.Vector3[]): [THREE.Group, OrbitUpdater] {
+    const material = new THREE.LineBasicMaterial({color: 0x999999});
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, material);
+    const group = new THREE.Group();
+    group.add(line);
+    const updateFunc = (points: THREE.Vector3[]) => {
+        geometry.setFromPoints(points);
+    }
+    return [group, updateFunc];
+}
+
+
+
 export function createEarthMesh(mass: number): THREE.Group{
     earthNormalTexture ??= new THREE.TextureLoader().load('assets/earth_normal.jpg');
     const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);  //TODO: Use radius instead of mass
@@ -20,7 +36,7 @@ export function createSunMesh(mass: number): THREE.Group{
     const material = new THREE.MeshPhongMaterial( { color: 0x9D00FF } );
     material.emissive = new THREE.Color(0x9D00FF);
 
-    let light = new THREE.PointLight(0xFFFFFF); // TODO: Maybe put point light in sun mesh maker?
+    let light = new THREE.PointLight(0xFFFFFF);
     light.position.set(0, 0, 0);
 
     const sunGroup = new THREE.Group();

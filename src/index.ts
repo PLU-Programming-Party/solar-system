@@ -9,13 +9,21 @@ import { SpatialBody } from './gravity/SpatialBody';
 import cameraController from './CameraControls';
 import composer from './Composer';
 import G from './gravity/GravityConstant';
-import { createEarthMesh, createStarField, createSunMesh } from './render/PlanetaryRenderer';
+import { createOrbitPath, createEarthMesh, createStarField, createSunMesh, OrbitUpdater } from './render/PlanetaryRenderer';
 
+type SpatialEntity = {
+  body: SpatialBody,
+  visual: THREE.Group,
+  orbit: THREE.Group,
+  updateOrbit: OrbitUpdater
+}
+
+const _entities: SpatialEntity[] = [];
 
 //TODO: Create a more comprehensive testing suite
 
 function configureGUI(){
-  //TODO: add gui for scene params
+  //TODO: refactor GUI
 }
 
 const sceneParams = {
@@ -40,18 +48,29 @@ const keplarElements: KeplarElements = {
   true_anomaly: 0
 };
 
-function addBodyToScene(body: SpatialBody, group: THREE.Group) {
+function appendNewEntity(body: SpatialBody, group: THREE.Group): SpatialEntity {
   scene.add(group);
   body.onPositionChange = (x,y,z) => group.position.set(x,y,z);
+  let simulation = ps.predictPath(body, fixedInterval, intervals);
+  const [orbit, updateOrbit] = createOrbitPath(simulation);
+  scene.add(orbit);
+  const entity: SpatialEntity = {
+    body,
+    visual: group,
+    orbit,
+    updateOrbit
+  }
+  _entities.push(entity);
+  return entity;
 }
 
 const sunMass = 10000;
 const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true);
-addBodyToScene(sun, createSunMesh(sunMass));
+appendNewEntity(sun, createSunMesh(sunMass));
 
 const earthMass = 500;
 const earth = ps.constructBodyRelative(earthMass, sun, keplarElements);
-addBodyToScene(earth, createEarthMesh(earthMass));
+appendNewEntity(earth, createEarthMesh(earthMass));
 
 scene.add(createStarField(Math.random(), 10));
 
@@ -73,8 +92,6 @@ keplarGui.add(keplarElements, 'ascending_node', 0, 360).name('Angle of Asc. Node
 keplarGui.add(keplarElements, 'periapsis', 0, 360).name('Periapsis');
 keplarGui.add(keplarElements, 'true_anomaly', 0, 360).name('True Anomaly');
 
-
-
 let ambient = new THREE.AmbientLight(0x333333);
 
 scene.add(ambient);
@@ -83,7 +100,6 @@ camera.lookAt(0,0,0);
 
 //animation frame for cube
 function animate() {
-  // camera.position.set(earth.pos.x, earth.pos.y, .2);
   cameraController.update();
 
   composer.render();
@@ -91,33 +107,13 @@ function animate() {
  
 };
 
-function createOrbitPath(pBody: SpatialBody, ps: PlanetarySystem, intervals: number, fixedInterval: number) {
-  let simulation = ps.predictPath(pBody, fixedInterval, intervals);
-  const material = new THREE.LineBasicMaterial({color: 0x999999});
-  const geometry = new THREE.BufferGeometry().setFromPoints(simulation);
-  const line = new THREE.Line(geometry, material);
-  return line;
-}
-
-const sunOrbit = createOrbitPath(sun, ps, intervals, fixedInterval);
-scene.add(sunOrbit);
-
-const earthOrbit = createOrbitPath(earth, ps, intervals, fixedInterval);
-scene.add(earthOrbit);
-
 function fixedUpdate() {
 
-  if(sceneParams.updateOrbit){
-    sunOrbit.geometry.setFromPoints(ps.predictPath(sun, fixedInterval, intervals));
-    earthOrbit.geometry.setFromPoints(ps.predictPath(earth, fixedInterval, intervals));
-  }
-
-  if(sceneParams.showOrbit){
-    sunOrbit.visible = true;
-    earthOrbit.visible = true;
-  } else {
-    sunOrbit.visible = false;
-    earthOrbit.visible = false;
+  for( let entity of _entities ){
+    if(sceneParams.updateOrbit){
+      entity.updateOrbit(ps.predictPath(entity.body, fixedInterval, intervals));
+    }
+    entity.orbit.visible = sceneParams.showOrbit;
   }
 
   if(sceneParams.pauseScene){
@@ -126,8 +122,6 @@ function fixedUpdate() {
 
   ps.accelerateSystem(fixedInterval);
   ps.updateSystem(fixedInterval);
-  // params.orbit = specificOrbit(earth.body, sun.body);
-  // console.log(params.orbit);
 }
 
 requestAnimationFrame(animate);
