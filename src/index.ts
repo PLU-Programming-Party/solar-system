@@ -3,14 +3,13 @@ import * as THREE from 'three';
 import scene from './Scene';
 import camera from './Camera';
 import { PlanetarySystem } from './gravity/PlanetarySystem';
-import { generateSprites } from './SpriteGeneration';
 import gui from './GUI';
 import { KeplarElements, keplarToCartesian } from './gravity/GravityCalc';
 import { SpatialBody } from './gravity/SpatialBody';
 import cameraController from './CameraControls';
 import composer from './Composer';
 import G from './gravity/GravityConstant';
-import { createEarthMesh, createSunMesh } from './render/PlanetaryRenderer';
+import { createEarthMesh, createStarField, createSunMesh } from './render/PlanetaryRenderer';
 
 
 //TODO: Create a more comprehensive testing suite
@@ -54,6 +53,8 @@ const earthMass = 500;
 const earth = ps.constructBodyRelative(earthMass, sun, keplarElements);
 addBodyToScene(earth, createEarthMesh(earthMass));
 
+scene.add(createStarField(Math.random(), 10));
+
 
 const fixedInterval = 20; // Interval time in milliseconds
 let intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
@@ -79,20 +80,6 @@ let ambient = new THREE.AmbientLight(0x333333);
 scene.add(ambient);
 camera.position.set(0, 0, 500);
 camera.lookAt(0,0,0); 
-
-const textureLoader = new THREE.TextureLoader();
-const seed = Math.random();
-
-const starMaterial = new THREE.SpriteMaterial( { map: textureLoader.load( 'assets/star.png' ) } );
-const sprites = generateSprites( [starMaterial], seed);
-scene.add( ... sprites );
-
-const totalNebulas = 10;
-const nebulaMaterials: THREE.SpriteMaterial[] = [];
-for (let i = 1; i <= totalNebulas; i++)
-  nebulaMaterials.push(new THREE.SpriteMaterial( { map: textureLoader.load( 'assets/nebula' + i + '.png' ) } ));
-const nebulas = generateSprites(nebulaMaterials, seed, 20, 5);
-scene.add( ... nebulas );
 
 //animation frame for cube
 function animate() {
