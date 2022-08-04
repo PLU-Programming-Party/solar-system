@@ -1,4 +1,4 @@
-import { SpacialBody } from "./SpacialBody";
+import { SpatialBody } from "./SpatialBody";
 import G from "./GravityConstant";
 import { Vector3, Euler } from "three";
 
@@ -11,7 +11,7 @@ export type KeplarElements = {
     true_anomaly: number
 };
 
-export function keplarToCartesian(centralBody: SpacialBody, mass: number, elements: KeplarElements): {pos: Vector3, vel: Vector3} {
+export function keplarToCartesian(centralBody: SpatialBody, mass: number, elements: KeplarElements): {pos: Vector3, vel: Vector3} {
     const {
         eccentricity: e, 
         semi_major_axis: a, 
@@ -49,14 +49,14 @@ export function keplarToCartesian(centralBody: SpacialBody, mass: number, elemen
     return {pos, vel};
 }
 
-export function specificOrbit(spacialBody1: SpacialBody, spacialBody2: SpacialBody):number{
+export function specificOrbit(spatialBody1: SpatialBody, spatialBody2: SpatialBody):number{
     //V^2 / 2 - u / r 
     //V - relative orbital speed (diff of spatialBody2 and spatialBody1)
     //u - masses of the bodies multiplied by the gravitational constant
     //r - distance between the two points
-    const v = spacialBody2.vel.distanceTo(spacialBody1.vel)
-    const u = (spacialBody2.mass + spacialBody1.mass)*G
-    const r = spacialBody2.pos.distanceTo(spacialBody1.pos)
+    const v = spatialBody2.vel.distanceTo(spatialBody1.vel)
+    const u = (spatialBody2.mass + spatialBody1.mass)*G
+    const r = spatialBody2.pos.distanceTo(spatialBody1.pos)
 
     return Math.pow(v, 2) / 2 - u / r;
 }

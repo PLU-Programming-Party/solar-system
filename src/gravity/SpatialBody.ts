@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 
-export class SpacialBody {
+export type OnChangeCallback = (x: number, y: number, z: number) => void;
+
+export class SpatialBody {
     private _pos: THREE.Vector3;
     private _vel: THREE.Vector3;
     private _mass: number;
@@ -9,6 +11,7 @@ export class SpacialBody {
     private _id: number;
 
     private isStationary: boolean;
+    public onPositionChange: OnChangeCallback;
 
     /**
      * Creates an instance of SpacialBody
@@ -19,8 +22,8 @@ export class SpacialBody {
      * @param isStationary
      */
     constructor(pos: THREE.Vector3 = new THREE.Vector3(), vel: THREE.Vector3 = new THREE.Vector3(), mass = 1, isStationary = false) {
-        this._id = SpacialBody.nextId;
-        SpacialBody.nextId++;
+        this._id = SpatialBody.nextId;
+        SpatialBody.nextId++;
 
         this._pos = pos;
         this._vel = vel;
@@ -29,8 +32,8 @@ export class SpacialBody {
         this.isStationary = isStationary;
     }
 
-    public clone(): SpacialBody {
-        let newBody = new SpacialBody(this._pos.clone(), this._vel.clone(), this.mass, this.isStationary);
+    public clone(): SpatialBody {
+        let newBody = new SpatialBody(this._pos.clone(), this._vel.clone(), this.mass, this.isStationary);
         newBody._id = this._id;
         return newBody;
     }

@@ -6,7 +6,7 @@ import { PlanetarySystem } from './gravity/PlanetarySystem';
 import { generateSprites } from './SpriteGeneration';
 import gui from './GUI';
 import { KeplarElements, keplarToCartesian } from './gravity/GravityCalc';
-import { SpacialBody } from './gravity/SpacialBody';
+import { SpatialBody } from './gravity/SpatialBody';
 import cameraController from './CameraControls';
 import composer from './Composer';
 import G from './gravity/GravityConstant';
@@ -44,22 +44,24 @@ const keplarElements: KeplarElements = {
 const sunMass = 10000;
 const sunMesh = createSunMesh(sunMass);
 scene.add(sunMesh);
-const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true, (x,y,z) => sunMesh.position.set(x,y,z));
+const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true);
+sun.onPositionChange = (x,y,z) => sunMesh.position.set(x,y,z);
 
 const earthMass = 500; //TODO: make work
 const earthMesh = createEarthMesh(earthMass);
 scene.add(earthMesh);
-const earth = ps.constructBodyRelative(earthMass, sun.body, keplarElements, (x,y,z) => earthMesh.position.set(x,y,z));
+const earth = ps.constructBodyRelative(earthMass, sun, keplarElements);
+earth.onPositionChange = (x,y,z) => earthMesh.position.set(x,y,z);
 
 const fixedInterval = 20; // Interval time in milliseconds
-let intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.body.mass)) / fixedInterval;
+let intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
 
 const keplarGui = gui.addFolder("Keplar Elements");
 keplarGui.onChange(() => {
-  intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.body.mass)) / fixedInterval;
-  const stateVectors = keplarToCartesian(sun.body, 500, keplarElements);
-  earth.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
-  earth.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
+  intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
+  const stateVectors = keplarToCartesian(sun, 500, keplarElements);
+  earth.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
+  earth.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
 })
 keplarGui.add(keplarElements, 'eccentricity', 0, 1).name('Eccentricity');
 keplarGui.add(keplarElements, 'semi_major_axis', 100, 1000).name('Semi-Major Axis');
@@ -69,7 +71,7 @@ keplarGui.add(keplarElements, 'periapsis', 0, 360).name('Periapsis');
 keplarGui.add(keplarElements, 'true_anomaly', 0, 360).name('True Anomaly');
 
 let light = new THREE.PointLight(0xFFFFFF);
-light.position.set(sun.body.pos.x, sun.body.pos.y, sun.body.pos.z);
+light.position.set(sun.pos.x, sun.pos.y, sun.pos.z);
 
 let ambient = new THREE.AmbientLight(0x333333);
 
@@ -102,8 +104,8 @@ function animate() {
  
 };
 
-function createOrbitPath(pBody: any, ps: PlanetarySystem, intervals: number, fixedInterval: number) {
-  let simulation = ps.predictPath(pBody.body, fixedInterval, intervals);
+function createOrbitPath(pBody: SpatialBody, ps: PlanetarySystem, intervals: number, fixedInterval: number) {
+  let simulation = ps.predictPath(pBody, fixedInterval, intervals);
   const material = new THREE.LineBasicMaterial({color: 0x999999});
   const geometry = new THREE.BufferGeometry().setFromPoints(simulation);
   const line = new THREE.Line(geometry, material);
@@ -119,8 +121,8 @@ scene.add(earthOrbit);
 function fixedUpdate() {
 
   if(sceneParams.updateOrbit){
-    sunOrbit.geometry.setFromPoints(ps.predictPath(sun.body, fixedInterval, intervals));
-    earthOrbit.geometry.setFromPoints(ps.predictPath(earth.body, fixedInterval, intervals));
+    sunOrbit.geometry.setFromPoints(ps.predictPath(sun, fixedInterval, intervals));
+    earthOrbit.geometry.setFromPoints(ps.predictPath(earth, fixedInterval, intervals));
   }
 
   if(sceneParams.showOrbit){
