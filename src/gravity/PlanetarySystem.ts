@@ -18,8 +18,8 @@ export class PlanetarySystem {
     }
     // TODO: NO MORE ENTITIES! USE SPACIALBODY INSTEAD
 
-    public constructBody(mass: number, position: THREE.Vector3, velocity: THREE.Vector3, onPositionChange: OnChangeCallback): entity {
-        const body = new SpacialBody(position, velocity, mass);
+    public constructBody(mass: number, position: THREE.Vector3, velocity: THREE.Vector3, isStationary: boolean, onPositionChange: OnChangeCallback): entity {
+        const body = new SpacialBody(position, velocity, mass, isStationary);
 
         const bodyEntity = {
             body,
@@ -32,7 +32,7 @@ export class PlanetarySystem {
 
     public constructBodyRelative(mass: number, relativeBody: SpacialBody, elements: KeplarElements, onPositionChange: OnChangeCallback): entity{
         const {pos, vel} = keplarToCartesian(relativeBody, mass, elements);
-        return this.constructBody(mass, pos, vel, onPositionChange);
+        return this.constructBody(mass, pos, vel, false, onPositionChange);
     }
 
     clone(): PlanetarySystem {

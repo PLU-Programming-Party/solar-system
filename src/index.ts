@@ -44,7 +44,7 @@ const keplarElements: KeplarElements = {
 const sunMass = 10000;
 const sunMesh = createSunMesh(sunMass);
 scene.add(sunMesh);
-const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), (x,y,z) => sunMesh.position.set(x,y,z));
+const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true, (x,y,z) => sunMesh.position.set(x,y,z));
 
 const earthMass = 500; //TODO: make work
 const earthMesh = createEarthMesh(earthMass);
