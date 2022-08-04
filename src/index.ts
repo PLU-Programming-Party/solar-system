@@ -41,17 +41,19 @@ const keplarElements: KeplarElements = {
   true_anomaly: 0
 };
 
-const sunMass = 10000;
-const sunMesh = createSunMesh(sunMass);
-scene.add(sunMesh);
-const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true);
-sun.onPositionChange = (x,y,z) => sunMesh.position.set(x,y,z);
+function addBodyToScene(body: SpatialBody, group: THREE.Group) {
+  scene.add(group);
+  body.onPositionChange = (x,y,z) => group.position.set(x,y,z);
+}
 
-const earthMass = 500; //TODO: make work
-const earthMesh = createEarthMesh(earthMass);
-scene.add(earthMesh);
+const sunMass = 10000;
+const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true);
+addBodyToScene(sun, createSunMesh(sunMass));
+
+const earthMass = 500;
 const earth = ps.constructBodyRelative(earthMass, sun, keplarElements);
-earth.onPositionChange = (x,y,z) => earthMesh.position.set(x,y,z);
+addBodyToScene(earth, createEarthMesh(earthMass));
+
 
 const fixedInterval = 20; // Interval time in milliseconds
 let intervals = 2 * Math.PI * Math.sqrt(Math.pow(keplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
@@ -70,12 +72,10 @@ keplarGui.add(keplarElements, 'ascending_node', 0, 360).name('Angle of Asc. Node
 keplarGui.add(keplarElements, 'periapsis', 0, 360).name('Periapsis');
 keplarGui.add(keplarElements, 'true_anomaly', 0, 360).name('True Anomaly');
 
-let light = new THREE.PointLight(0xFFFFFF);
-light.position.set(sun.pos.x, sun.pos.y, sun.pos.z);
+
 
 let ambient = new THREE.AmbientLight(0x333333);
 
-scene.add(light);
 scene.add(ambient);
 camera.position.set(0, 0, 500);
 camera.lookAt(0,0,0); 
