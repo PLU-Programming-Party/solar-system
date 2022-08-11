@@ -49,6 +49,25 @@ const activeKeplarElements: KeplarElements = {
 
 const earthElements: KeplarElements = {...activeKeplarElements};
 
+function addNewPlanet(mass: number, primaryBody: SpatialBody, keplar: KeplarElements) {
+  const body = ps.constructBodyRelative(mass, primaryBody, keplar);
+  const entity = appendNewEntity(body, createEarthMesh(mass));
+  activeEntity = entity;
+  _keplarElementMap.set(entity, keplar);
+  return entity;
+}
+
+function createRandomKeplarElements({eccentricity = Math.random(), semi_major_axis = Math.random() * 1000, inclination = Math.random() * Math.PI, ascending_node = Math.random() * Math.PI, periapsis = Math.random() * Math.PI, true_anomaly = Math.random() * Math.PI}): KeplarElements {
+  return {
+    eccentricity,
+    semi_major_axis,
+    inclination,
+    ascending_node,
+    periapsis,
+    true_anomaly,
+  }
+}
+
 function appendNewEntity(body: SpatialBody, group: THREE.Group): SpatialEntity {
   scene.add(group);
   body.onPositionChange = (x,y,z) => group.position.set(x,y,z);
@@ -71,24 +90,10 @@ const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vect
 appendNewEntity(sun, createSunMesh(sunMass));
 
 const earthMass = 500;
-const earth = ps.constructBodyRelative(earthMass, sun, earthElements);
-const earthEntity = appendNewEntity(earth, createEarthMesh(earthMass));
-activeEntity = earthEntity;
-_keplarElementMap.set(earthEntity, earthElements);
-
-const xanElements: KeplarElements = {
-  eccentricity: 0,
-  semi_major_axis: 400,
-  inclination: 0,
-  ascending_node: 0,
-  periapsis: 0,
-  true_anomaly: 0
-};
+addNewPlanet(earthMass, sun, createRandomKeplarElements({eccentricity: 0, inclination: 0}));
 
 const xanMass = 750;
-const xan = ps.constructBodyRelative(xanMass, sun, xanElements);
-const xanEntity = appendNewEntity(xan, createEarthMesh(xanMass));
-_keplarElementMap.set(xanEntity, xanElements);
+addNewPlanet(xanMass, sun, createRandomKeplarElements({eccentricity: 0, inclination: 0}));
 
 scene.add(createStarField(Math.random(), 10));
 
