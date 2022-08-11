@@ -11,6 +11,7 @@ import cameraController from './CameraControls';
 import composer from './Composer';
 import G from './gravity/GravityConstant';
 import { createOrbitPath, createEarthMesh, createStarField, createSunMesh, OrbitUpdater } from './render/PlanetaryRenderer';
+import skyBox from './Skybox';
 
 //TODO: Live update keplar elements
 //TODO: Create a more comprehensive testing suite
@@ -68,6 +69,7 @@ const xanMass = 750;
 addNewPlanet(xanMass, sun, createRandomKeplarElements({eccentricity: 0, semi_major_axis: 400, inclination: 0}));
 
 scene.add(createStarField(Math.random(), 10));
+scene.add(skyBox);
 
 // General Scene Setup
 let ambient = new THREE.AmbientLight(0x333333);
