@@ -1,5 +1,6 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HtmlWebpackTagsPlugin = require('html-webpack-tags-plugin');
 const path = require('path');
 
 module.exports = {
@@ -21,8 +22,10 @@ module.exports = {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist'),
   },
-  plugins: [new HtmlWebpackPlugin(), 
-    new CopyWebpackPlugin({patterns: [ { from: 'src/assets', to: 'assets' } ] })
+  plugins: [
+    new CopyWebpackPlugin({patterns: [ { from: 'src/assets', to: 'assets' } ] }),
+    new HtmlWebpackTagsPlugin({tags: ['assets/index.css'], append: true}),
+    new HtmlWebpackPlugin()
   ],
     
 };
