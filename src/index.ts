@@ -24,18 +24,26 @@ const _keplarElementMap = new Map<SpatialEntity, KeplarElements>();
 //TODO: Live update keplar elements
 //TODO: Create a more comprehensive testing suite
 
+let ps = new PlanetarySystem();
+
+const sunMass = 10000;
+const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true);
+appendNewEntity(sun, createSunMesh(sunMass));
+
 const sceneParams = {
   pauseScene: false,
   showOrbit: true,
-  updateOrbit: true
+  updateOrbit: true,
+  addRandomPlanet(){
+    addNewPlanet(Math.random() * 100, sun, createRandomKeplarElements({eccentricity: 0, inclination: 0}));
+  } 
 }
 
 const sceneGUI = gui.addFolder('Scene Controls');
 sceneGUI.add( sceneParams, 'pauseScene').name('Pause Scene');
 sceneGUI.add( sceneParams, 'showOrbit').name('Show Orbit');
 sceneGUI.add( sceneParams, 'updateOrbit').name('Update Orbit');
-
-let ps = new PlanetarySystem();
+sceneGUI.add( sceneParams, 'addRandomPlanet').name('Add Random Planet');
 
 let activeEntity: SpatialEntity = null;
 const activeKeplarElements: KeplarElements = {
@@ -84,10 +92,6 @@ function appendNewEntity(body: SpatialBody, group: THREE.Group): SpatialEntity {
   _entities.push(entity);
   return entity;
 }
-
-const sunMass = 10000;
-const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true);
-appendNewEntity(sun, createSunMesh(sunMass));
 
 const earthMass = 500;
 addNewPlanet(earthMass, sun, createRandomKeplarElements({eccentricity: 0, inclination: 0}));
