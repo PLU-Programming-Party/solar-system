@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as THREE from 'three';
 import scene from './Scene';
 import camera from './Camera';
+import renderer from './Renderer';
 import { PlanetarySystem } from './gravity/PlanetarySystem';
 import gui from './GUI';
 import { KeplarElements, keplarToCartesian } from './gravity/GravityCalc';
@@ -95,6 +96,7 @@ keplarGui.add(activeKeplarElements, 'true_anomaly', 0, 360).name('True Anomaly')
 
 // other stuff
 window.addEventListener('click', onMouseClick);
+window.addEventListener('resize', onWindowResize);
 requestAnimationFrame(animate);
 setInterval(fixedUpdate, fixedInterval);
 
@@ -184,4 +186,10 @@ function onMouseClick(event: MouseEvent) {
       activeEntity = entity;
     }
   }
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
