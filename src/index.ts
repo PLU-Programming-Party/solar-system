@@ -11,6 +11,9 @@ import composer from './Composer';
 import G from './gravity/GravityConstant';
 import { createOrbitPath, createEarthMesh, createStarField, createSunMesh, OrbitUpdater } from './render/PlanetaryRenderer';
 
+//TODO: Live update keplar elements
+//TODO: Create a more comprehensive testing suite
+
 type SpatialEntity = {
   body: SpatialBody,
   visual: THREE.Group,
@@ -18,18 +21,19 @@ type SpatialEntity = {
   updateOrbit: OrbitUpdater
 }
 
+// Globals
 const _entities: SpatialEntity[] = [];
-const _keplarElementMap = new Map<SpatialEntity, KeplarElements>();
-
-//TODO: Live update keplar elements
-//TODO: Create a more comprehensive testing suite
-
+const _keplarElementMap = new Map<SpatialEntity, KeplarElements>(); 
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 let ps = new PlanetarySystem();
 
+// Create central body of system
 const sunMass = 10000;
 const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true);
 appendNewEntity(sun, createSunMesh(sunMass));
 
+// Main GUI setup 
 const sceneParams = {
   pauseScene: false,
   showOrbit: true,
@@ -45,6 +49,7 @@ sceneGUI.add( sceneParams, 'showOrbit').name('Show Orbit');
 sceneGUI.add( sceneParams, 'updateOrbit').name('Update Orbit');
 sceneGUI.add( sceneParams, 'addRandomPlanet').name('Add Random Planet');
 
+// Setup solar system
 let activeEntity: SpatialEntity = null;
 const activeKeplarElements: KeplarElements = {
   eccentricity: 0,
@@ -55,7 +60,68 @@ const activeKeplarElements: KeplarElements = {
   true_anomaly: 0
 }
 
-const earthElements: KeplarElements = {...activeKeplarElements};
+const earthMass = 500;
+addNewPlanet(earthMass, sun, createRandomKeplarElements({eccentricity: 0, semi_major_axis: 250, inclination: 0}));
+
+const xanMass = 750;
+addNewPlanet(xanMass, sun, createRandomKeplarElements({eccentricity: 0, semi_major_axis: 400, inclination: 0}));
+
+scene.add(createStarField(Math.random(), 10));
+
+// General Scene Setup
+let ambient = new THREE.AmbientLight(0x333333);
+
+scene.add(ambient);
+camera.position.set(0, 0, 500);
+camera.lookAt(0,0,0); 
+
+// Keplar GUI folder
+const fixedInterval = 20; // Interval time in milliseconds
+let intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
+
+const keplarGui = gui.addFolder("Keplar Elements");
+keplarGui.onChange(() => {
+  intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
+  const stateVectors = keplarToCartesian(sun, 500, activeKeplarElements);
+  activeEntity.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
+  activeEntity.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
+})
+keplarGui.add(activeKeplarElements, 'eccentricity', 0, 1).name('Eccentricity').listen();
+keplarGui.add(activeKeplarElements, 'semi_major_axis', 100, 1000).name('Semi-Major Axis').listen();
+keplarGui.add(activeKeplarElements, 'inclination', 0, 360).name('Inclination').listen();
+keplarGui.add(activeKeplarElements, 'ascending_node', 0, 360).name('Angle of Asc. Node').listen();
+keplarGui.add(activeKeplarElements, 'periapsis', 0, 360).name('Periapsis').listen();
+keplarGui.add(activeKeplarElements, 'true_anomaly', 0, 360).name('True Anomaly').listen();
+
+// other stuff
+window.addEventListener('click', onMouseClick);
+requestAnimationFrame(animate);
+setInterval(fixedUpdate, fixedInterval);
+
+function animate() {
+  cameraController.update();
+  composer.render();
+  requestAnimationFrame(animate);
+ 
+};
+
+function fixedUpdate() {
+  for( let entity of _entities ){
+    if(sceneParams.updateOrbit){
+      entity.updateOrbit(ps.predictPath(entity.body, fixedInterval, intervals));
+    }
+    entity.orbit.visible = sceneParams.showOrbit;
+  }
+
+  if(sceneParams.pauseScene){
+    return;
+  }
+
+  ps.accelerateSystem(fixedInterval);
+  ps.updateSystem(fixedInterval);
+}
+
+// Functions
 
 function addNewPlanet(mass: number, primaryBody: SpatialBody, keplar: KeplarElements) {
   const body = ps.constructBodyRelative(mass, primaryBody, keplar);
@@ -93,40 +159,7 @@ function appendNewEntity(body: SpatialBody, group: THREE.Group): SpatialEntity {
   return entity;
 }
 
-const earthMass = 500;
-addNewPlanet(earthMass, sun, createRandomKeplarElements({eccentricity: 0, inclination: 0}));
-
-const xanMass = 750;
-addNewPlanet(xanMass, sun, createRandomKeplarElements({eccentricity: 0, inclination: 0}));
-
-scene.add(createStarField(Math.random(), 10));
-
-const fixedInterval = 20; // Interval time in milliseconds
-let intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
-
-const keplarGui = gui.addFolder("Keplar Elements");
-keplarGui.onChange(() => {
-  intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
-  const stateVectors = keplarToCartesian(sun, 500, activeKeplarElements);
-  activeEntity.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
-  activeEntity.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
-})
-keplarGui.add(activeKeplarElements, 'eccentricity', 0, 1).name('Eccentricity').listen();
-keplarGui.add(activeKeplarElements, 'semi_major_axis', 100, 1000).name('Semi-Major Axis').listen();
-keplarGui.add(activeKeplarElements, 'inclination', 0, 360).name('Inclination').listen();
-keplarGui.add(activeKeplarElements, 'ascending_node', 0, 360).name('Angle of Asc. Node').listen();
-keplarGui.add(activeKeplarElements, 'periapsis', 0, 360).name('Periapsis').listen();
-keplarGui.add(activeKeplarElements, 'true_anomaly', 0, 360).name('True Anomaly').listen();
-
-let ambient = new THREE.AmbientLight(0x333333);
-
-scene.add(ambient);
-camera.position.set(0, 0, 500);
-camera.lookAt(0,0,0); 
-
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
+// Raycaster to handle selecting planets
 function onMouseClick(event: MouseEvent) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -152,34 +185,3 @@ function onMouseClick(event: MouseEvent) {
     }
   }
 }
-
-window.addEventListener('click', onMouseClick);
-
-//animation frame for cube
-function animate() {
-  cameraController.update();
-
-  composer.render();
-  requestAnimationFrame(animate);
- 
-};
-
-function fixedUpdate() {
-
-  for( let entity of _entities ){
-    if(sceneParams.updateOrbit){
-      entity.updateOrbit(ps.predictPath(entity.body, fixedInterval, intervals));
-    }
-    entity.orbit.visible = sceneParams.showOrbit;
-  }
-
-  if(sceneParams.pauseScene){
-    return;
-  }
-
-  ps.accelerateSystem(fixedInterval);
-  ps.updateSystem(fixedInterval);
-}
-
-requestAnimationFrame(animate);
-setInterval(fixedUpdate, fixedInterval);
