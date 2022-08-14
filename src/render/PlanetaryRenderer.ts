@@ -33,10 +33,10 @@ export function createEarthMesh(mass: number): THREE.Group{
     
 export function createSunMesh(mass: number): THREE.Group{
     const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16); //TODO: Use radius instead of mass
-    const material = new THREE.MeshPhongMaterial( { color: 0x9D00FF } );
-    material.emissive = new THREE.Color(0x9D00FF);
+    const material = new THREE.MeshPhongMaterial( { color: 0xFFFF66 } );
+    material.emissive = new THREE.Color(0xFFFF33);
 
-    let light = new THREE.PointLight(0xFFFFFF);
+    let light = new THREE.PointLight(0xFFFF00);
     light.position.set(0, 0, 0);
 
     const sunGroup = new THREE.Group();
