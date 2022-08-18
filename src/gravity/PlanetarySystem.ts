@@ -1,65 +1,37 @@
-import { SpacialBody } from "./SpacialBody";
+import { SpatialBody } from "./SpatialBody";
 import * as THREE from 'three';
+import G from "./GravityConstant";
+import { KeplarElements, keplarToCartesian } from "./GravityCalc";
+
 export class PlanetarySystem {
-    private static readonly G = .00005;
+    private _bodies: SpatialBody[];
 
-    private _bodies: {body: SpacialBody, mesh: THREE.Mesh}[];
-
-    /**
-     * Creates instance of PlanetarySystem
-     */
     constructor() {
         this._bodies = [];
     }
 
-    public constructCentralBody(mass: number) {
-        const centralBody = new SpacialBody(new THREE.Vector3(), undefined, mass, true);
-        
-        const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
-        const material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff * 100 } );
-
-        const body = {
-            body: centralBody,
-            mesh: new THREE.Mesh(geometry, material)
-        };
-        
+    public constructBody(mass: number, position: THREE.Vector3, velocity: THREE.Vector3, isStationary: boolean): SpatialBody {
+        const body = new SpatialBody(position, velocity, mass, isStationary);
         this.addBody(body);
         return body;
     }
 
-    earthNormalTexture = new THREE.TextureLoader().load('assets/earth_normal.jpg')
-
-    public constructPlanetaryBody(distance: number, mass: number, orbitBody: SpacialBody) {
-        const pos = (new THREE.Vector3(distance, 0, 0)).add(orbitBody.pos);
-        const vel = (new THREE.Vector3(0, Math.sqrt(PlanetarySystem.G * orbitBody.mass / Math.abs(distance)), 0)).add(orbitBody.vel);
-        const planetaryBody = new SpacialBody(pos, vel, mass);
-        
-        const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16);
-        const material = new THREE.MeshPhongMaterial( { color: Math.random() * 0xffffff } );
-        material.normalMap = this.earthNormalTexture;
-        material.normalScale = new THREE.Vector2(10, 10);
-        material.shininess = 0;
-
-        const body = {
-            body: planetaryBody,
-            mesh: new THREE.Mesh(geometry, material)
-        };
-        
-        this.addBody(body);
-        return body;
+    public constructBodyRelative(mass: number, relativeBody: SpatialBody, elements: KeplarElements): SpatialBody{
+        const {pos, vel} = keplarToCartesian(relativeBody, mass, elements);
+        return this.constructBody(mass, pos, vel, false);
     }
 
-    public clone(): PlanetarySystem {
+    clone(): PlanetarySystem {
         let newSystem = new PlanetarySystem();
         for (const body of this._bodies)
-            newSystem.addBody({ body: body.body.clone(), mesh: body.mesh.clone()});
+            newSystem.addBody(body.clone());
         return newSystem;
     }
 
-    public predictPath(body: SpacialBody, time: number, count: number): THREE.Vector3[] {
+    public predictPath(body: SpatialBody, time: number, count: number): THREE.Vector3[] {
         let clonedSystem = this.clone();
 
-        let clonedBody = clonedSystem._bodies.filter(b => b.body.id === body.id)[0].body;
+        let clonedBody = clonedSystem._bodies.filter(b => b.id === body.id)[0];
 
         let positions: THREE.Vector3[] = [];
 
@@ -73,24 +45,17 @@ export class PlanetarySystem {
         return positions;
     }
 
-    public addMeshes(scene: THREE.Scene) {
-        for (const sb of this._bodies)
-            scene.add(sb.mesh);
-    }
-
     /**
      * Calculates force and acceleration
      * of each body in system
      */
     public accelerateSystem(time: number) {
-        for (const current of this._bodies) {
-            const body = current.body;
+        for (const body of this._bodies) {
             let netForce = new THREE.Vector3();
-            for (const compare of this._bodies) {
-                const compareBody = compare.body;
+            for (const compareBody of this._bodies) {
                 if (body.id !== compareBody.id) {
                     // Calculate force magnitude G * m1 * m2 / r^2
-                    let force = PlanetarySystem.G * body.mass * compareBody.mass / Math.pow(body.pos.distanceTo(compareBody.pos), 2);
+                    let force = G * body.mass * compareBody.mass / Math.pow(body.pos.distanceTo(compareBody.pos), 2);
                     
                     // Calculate force vector direction
                     let direction = compareBody.pos.clone();
@@ -115,17 +80,13 @@ export class PlanetarySystem {
      * Calls update function for each body
      */
     public updateSystem(time: number) {
-        for (const sb of this._bodies)
-            sb.body.update(time);
+        for (const sb of this._bodies) {
+            sb.update(time);
+            sb.onPositionChange?.(sb.pos.x, sb.pos.y, sb.pos.z);
+        }
     }
 
-    public meshUpdate() {
-        for (const sb of this._bodies)
-            sb.mesh.position.set(sb.body.pos.x, sb.body.pos.y, sb.body.pos.z);
-    }
-
-    private addBody(body: any) {
+    addBody(body: SpatialBody) {
         this._bodies.push(body);
-    }
-    
+    } 
 }
