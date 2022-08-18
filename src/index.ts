@@ -13,6 +13,28 @@ import G from './gravity/GravityConstant';
 import { createOrbitPath, createEarthMesh, createStarField, createSunMesh, OrbitUpdater } from './render/PlanetaryRenderer';
 import skyBox from './Skybox';
 
+const vertexShader = require('./shaders/atmosphere_vert.glsl');
+const fragmentShader = require('./shaders/atmosphere_frag.glsl');
+
+const box = new THREE.Mesh(
+  new THREE.SphereGeometry(25, 32, 32),
+  new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+      texture: {
+        value: new THREE.TextureLoader().load('assets/earth.jpg')
+      }
+    }
+  })
+);
+
+box.position.set(250, 0, 0);
+//scene.add(box);
+
+
+
+
 //TODO: Live update keplar elements
 //TODO: Create a more comprehensive testing suite
 
