@@ -1,6 +1,7 @@
-uniform sampler2D textureSampler;
-in vec2 vUV;
+varying float intensity;
+uniform vec3 color;
 
 void main() {
-    gl_FragColor = texture(textureSampler, vUV); // vec4(1, 1, 0.5, 1); //
+  vec3 glow = color * intensity;
+  gl_FragColor = vec4( glow, 1.0 );
 }

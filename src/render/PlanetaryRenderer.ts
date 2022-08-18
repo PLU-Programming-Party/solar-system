@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import SimplexNoise from 'simplex-noise';
 
+const vertexShader = require('../shaders/atmosphere_vert.glsl');
+const fragmentShader = require('../shaders/atmosphere_frag.glsl');
+
 let earthNormalTexture: THREE.Texture;
 
 export type OrbitUpdater = (points: THREE.Vector3[]) => void;
@@ -32,6 +35,23 @@ export function createEarthMesh(mass: number): THREE.Group{
 }
     
 export function createSunMesh(mass: number): THREE.Group{
+
+    const sunGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(25, 32, 32),
+        new THREE.ShaderMaterial({
+            vertexShader,
+            fragmentShader,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide,
+            uniforms: {
+                viewVector: { value: new THREE.Vector3() },
+                color: { value: new THREE.Color(0x334455) },
+                brightness: { value: 0.3 },
+            }
+        })
+    );
+      
+    
     const geometry = new THREE.SphereGeometry(Math.pow(mass, 1/3), 32, 16); //TODO: Use radius instead of mass
     const material = new THREE.MeshPhongMaterial( { color: 0xFFFF66 } );
     material.emissive = new THREE.Color(0xFFFF33);
@@ -40,7 +60,8 @@ export function createSunMesh(mass: number): THREE.Group{
     light.position.set(0, 0, 0);
 
     const sunGroup = new THREE.Group();
-    sunGroup.add(new THREE.Mesh(geometry, material));
+    //sunGroup.add(new THREE.Mesh(geometry, material));
+    sunGroup.add(sunGlow);
     sunGroup.add(light);
     return sunGroup;
 }

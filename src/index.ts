@@ -16,23 +16,67 @@ import skyBox from './Skybox';
 const vertexShader = require('./shaders/atmosphere_vert.glsl');
 const fragmentShader = require('./shaders/atmosphere_frag.glsl');
 
+// const box = new THREE.Mesh(
+//   new THREE.SphereGeometry(25, 32, 32),
+//   new THREE.ShaderMaterial({
+//     vertexShader,
+//     fragmentShader,
+//     uniforms: {
+//       texture: {
+//         value: new THREE.TextureLoader().load('assets/earth.jpg')
+//       }
+//     }
+//   })
+// );
+
 const box = new THREE.Mesh(
   new THREE.SphereGeometry(25, 32, 32),
-  new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader,
-    uniforms: {
-      texture: {
-        value: new THREE.TextureLoader().load('assets/earth.jpg')
-      }
-    }
+  new THREE.MeshStandardMaterial({
+    map: new THREE.TextureLoader().load('assets/earth.jpg'),
+    side: THREE.DoubleSide,
+    normalMap: new THREE.TextureLoader().load('assets/earth_normal.jpg'),
   })
 );
 
 box.position.set(250, 0, 0);
-//scene.add(box);
+scene.add(box);
 
+const atmosphere = new THREE.Mesh(
+  new THREE.SphereGeometry(25, 32, 32),
+  new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    blending: THREE.AdditiveBlending,
+    side: THREE.BackSide,
+    uniforms: {
+      viewVector: { value: new THREE.Vector3() },
+      color: { value: new THREE.Color(0x2084ff) },
+      brightness: { value: 0.5 },
+    }
+  })
+);
 
+atmosphere.scale.set(1.15, 1.15, 1.15);
+atmosphere.position.set(250, 0, 0);
+scene.add(atmosphere);
+
+const sunGlow = new THREE.Mesh(
+  new THREE.SphereGeometry(25, 32, 32),
+  new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    blending: THREE.AdditiveBlending,
+    side: THREE.BackSide,
+    uniforms: {
+      viewVector: { value: new THREE.Vector3() },
+      color: { value: new THREE.Color(0xffffaa) },
+      brightness: { value: 0.3 },
+    }
+  })
+);
+
+sunGlow.position.set(0, 0, 0);
+scene.add(sunGlow);
 
 
 //TODO: Live update keplar elements
@@ -125,8 +169,18 @@ requestAnimationFrame(animate);
 setInterval(fixedUpdate, fixedInterval);
 
 function animate() {
+  let atmosPosition = new THREE.Vector3();
+  atmosphere.getWorldPosition(atmosPosition);
+  let viewVector = new THREE.Vector3().subVectors( camera.position, atmosPosition);
+  atmosphere.material.uniforms.viewVector.value = viewVector;
+
+  let sunGlowPosition = new THREE.Vector3();
+  sunGlow.getWorldPosition(sunGlowPosition);
+  let sunGlowViewVector = new THREE.Vector3().subVectors( camera.position, sunGlowPosition);
+  sunGlow.material.uniforms.viewVector.value = sunGlowViewVector;
+
   cameraController.update();
-  composer.render();
+  renderer.render(scene, camera);//composer.render();
   requestAnimationFrame(animate);
  
 };
