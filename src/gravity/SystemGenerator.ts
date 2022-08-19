@@ -1,11 +1,10 @@
 import { OrbitUpdater } from "../render/PlanetaryRenderer";
 import { PlanetarySystem } from "./PlanetarySystem";
 import { SpatialBody } from "./SpatialBody";
-import { KeplarElements, keplarToCartesian } from '../gravity/GravityCalc';
+import { KeplarElements } from '../gravity/GravityCalc';
 import * as THREE from 'three';
 import scene from '../Scene';
 import { createOrbitPath, createEarthMesh, createSunMesh } from '../render/PlanetaryRenderer';
-import { random } from "lodash";
 
 type SpatialEntity = {
     body: SpatialBody,
@@ -18,33 +17,59 @@ export class SystemGenerator {
     private _system: PlanetarySystem;
     private _entities: SpatialEntity[];
     private _keplarElementMap: Map<SpatialEntity, KeplarElements>;
+    private _sun: SpatialBody;
 
     public constructor(private fixedInterval: number, private intervals: number) {
         this._system = new PlanetarySystem();
         this._entities = [];
         this._keplarElementMap = new Map<SpatialEntity, KeplarElements>();
+        this._sun = new SpatialBody();
     }
 
-    public randomize(complexity = 0, planetCount = 10, moonProbability = .1, distanceThreshold = 100) {
+    public randomize(planetCount = 10, distanceThreshold = 100, complexity = 0, moonProbability = .1) {
         this._system = new PlanetarySystem();
         this._entities = [];
         this._keplarElementMap = new Map<SpatialEntity, KeplarElements>();
         
-        const sunMass = 10000;
-        const sun = this._system.constructBody(sunMass, undefined, undefined, true);
+        const sunMass = 100000;
+        this._sun = this._system.constructBody(sunMass, undefined, undefined, true);
         const mesh = createSunMesh(sunMass);
-        this.appendNewEntity(sun, mesh);
-    
+        this.appendNewEntity(this._sun, mesh);
+
         for (let i = 1; i <= planetCount; i++) {
-            const randomElements = createRandomKeplarElements({eccentricity: 0, semi_major_axis: i * distanceThreshold});
-            const randomMass = Math.random() * 400 + 100;
-            this.addNewPlanet(randomMass, sun, randomElements);
+          let lastApsis;
+          if (this._keplarElementMap.size == 0) {
+            lastApsis = 0;
+          } else {
+            const lastKeplar = this._keplarElementMap.get(this._entities[this._entities.length - 1]);
+            lastApsis = lastKeplar.semi_major_axis * (1 + lastKeplar.eccentricity);
+          }
+
+          const periapsis = lastApsis + distanceThreshold * (1 + Math.random());
+          const semi_major_axis = periapsis + Math.random() * distanceThreshold;
+          const eccentricity = 1 - periapsis/semi_major_axis;
+
+          const randomElements = createRandomKeplarElements({semi_major_axis, eccentricity});
+          const randomMass = Math.random() * 400 + 100;
+          this.addNewPlanet(randomMass, this._sun, randomElements);
         }
 
     }
 
-    public get system(): PlanetarySystem {
+    public get system() {
         return this._system;
+    }
+
+    public get entities() {
+      return this._entities;
+    }
+
+    public get keplarElementMap() {
+      return this._keplarElementMap
+    }
+
+    public get sun() {
+      return this._sun;
     }
 
     public appendNewEntity(body: SpatialBody, group: THREE.Group): SpatialEntity {
@@ -72,7 +97,7 @@ export class SystemGenerator {
     }
 }
   
-export function createRandomKeplarElements({eccentricity = Math.random(), semi_major_axis = Math.random() * 1000, inclination = Math.random() * Math.PI, ascending_node = Math.random() * Math.PI, periapsis = Math.random() * Math.PI, true_anomaly = Math.random() * Math.PI}): KeplarElements {
+export function createRandomKeplarElements({eccentricity = Math.random(), semi_major_axis = Math.random() * 900 + 100, inclination = Math.random() * 40 + 250, ascending_node = Math.random() * 40 + -20, periapsis = Math.random() * 360, true_anomaly = Math.random() * 360}): KeplarElements {
   return {
     eccentricity,
     semi_major_axis,

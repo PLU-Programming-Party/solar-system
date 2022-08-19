@@ -25,8 +25,8 @@ export type SpatialEntity = {
 }
 
 // Globals
-export const _entities: SpatialEntity[] = [];
-const _keplarElementMap = new Map<SpatialEntity, KeplarElements>(); 
+// export const _entities: SpatialEntity[] = [];
+// const _keplarElementMap = new Map<SpatialEntity, KeplarElements>(); 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 // export let ps = new PlanetarySystem();
@@ -41,7 +41,7 @@ const mouse = new THREE.Vector2();
 const sceneParams = {
   pauseScene: false,
   showOrbit: true,
-  updateOrbit: true,
+  updateOrbit: false,
   // addRandomPlanet(){
   //   addNewPlanet(Math.random() * 100, sun, createRandomKeplarElements({eccentricity: 0, inclination: 0}));
   // } 
@@ -52,17 +52,6 @@ sceneGUI.add( sceneParams, 'pauseScene').name('Pause Scene');
 sceneGUI.add( sceneParams, 'showOrbit').name('Show Orbit');
 sceneGUI.add( sceneParams, 'updateOrbit').name('Update Orbit');
 // sceneGUI.add( sceneParams, 'addRandomPlanet').name('Add Random Planet');
-
-// Setup solar system
-// let activeEntity: SpatialEntity = null;
-// const activeKeplarElements: KeplarElements = {
-//   eccentricity: 0,
-//   semi_major_axis: 250,
-//   inclination: 0,
-//   ascending_node: 0,
-//   periapsis: 0,
-//   true_anomaly: 0
-// }
 
 // const earthMass = 500;
 // addNewPlanet(earthMass, sun, createRandomKeplarElements({eccentricity: 0, semi_major_axis: 250, inclination: 0}));
@@ -82,30 +71,44 @@ camera.lookAt(0,0,0);
 
 // // Keplar GUI folder
 export const fixedInterval = 20; // Interval time in milliseconds
-export let intervals = 500;
+export let intervals = 5000;
 // export let intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
 
-// const keplarGui = gui.addFolder("Keplar Elements");
-// keplarGui.onChange(() => {
-//   intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
-//   const stateVectors = keplarToCartesian(sun, 500, activeKeplarElements);
-//   activeEntity.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
-//   activeEntity.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
-// })
-// keplarGui.add(activeKeplarElements, 'eccentricity', 0, 1).name('Eccentricity').listen();
-// keplarGui.add(activeKeplarElements, 'semi_major_axis', 100, 1000).name('Semi-Major Axis').listen();
-// keplarGui.add(activeKeplarElements, 'inclination', 0, 360).name('Inclination').listen();
-// keplarGui.add(activeKeplarElements, 'ascending_node', 0, 360).name('Angle of Asc. Node').listen();
-// keplarGui.add(activeKeplarElements, 'periapsis', 0, 360).name('Periapsis').listen();
-// keplarGui.add(activeKeplarElements, 'true_anomaly', 0, 360).name('True Anomaly').listen();
-
 // other stuff
-// window.addEventListener('click', onMouseClick);
+window.addEventListener('click', onMouseClick);
 window.addEventListener('resize', onWindowResize);
 
+// Setup solar system
 const systemGenerator = new SystemGenerator(fixedInterval, intervals);
-systemGenerator.randomize();
-export const ps = systemGenerator.system;
+systemGenerator.randomize(5);
+const ps = systemGenerator.system;
+const _entities = systemGenerator.entities;
+const _keplarElementMap = systemGenerator.keplarElementMap;
+const sun = systemGenerator.sun;
+
+let activeEntity: SpatialEntity = null;
+const activeKeplarElements: KeplarElements = {
+  eccentricity: 0,
+  semi_major_axis: 250,
+  inclination: 0,
+  ascending_node: 0,
+  periapsis: 0,
+  true_anomaly: 0
+}
+
+const keplarGui = gui.addFolder("Keplar Elements");
+keplarGui.onChange(() => {
+  // intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
+  const stateVectors = keplarToCartesian(sun, 500, activeKeplarElements);
+  activeEntity.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
+  activeEntity.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
+})
+keplarGui.add(activeKeplarElements, 'eccentricity', 0, 1).name('Eccentricity').listen();
+keplarGui.add(activeKeplarElements, 'semi_major_axis', 100, 1000).name('Semi-Major Axis').listen();
+keplarGui.add(activeKeplarElements, 'inclination', 0, 360).name('Inclination').listen();
+keplarGui.add(activeKeplarElements, 'ascending_node', 0, 360).name('Angle of Asc. Node').listen();
+keplarGui.add(activeKeplarElements, 'periapsis', 0, 360).name('Periapsis').listen();
+keplarGui.add(activeKeplarElements, 'true_anomaly', 0, 360).name('True Anomaly').listen();
 
 requestAnimationFrame(animate);
 setInterval(fixedUpdate, fixedInterval);
@@ -154,32 +157,32 @@ function fixedUpdate() {
 //   }
 // }
 
-// // Raycaster to handle selecting planets
-// function onMouseClick(event: MouseEvent) {
-//   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-//   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-//   raycaster.setFromCamera(mouse, camera);
-//   const intersects = raycaster.intersectObjects(_entities.map(e => e.visual));
-//   if (intersects.length > 0) {
-//     const intersect = intersects[0];
-//     let parent = intersect.object.parent;
-//     let entity: SpatialEntity;
-//     while(parent) {
-//       if (parent.userData.entity) {
-//         entity = parent.userData.entity;
-//         break;
-//       } else { 
-//         parent = parent.parent;
-//       }
-//     }
+// Raycaster to handle selecting planets
+function onMouseClick(event: MouseEvent) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(_entities.map(e => e.visual));
+  if (intersects.length > 0) {
+    const intersect = intersects[0];
+    let parent = intersect.object.parent;
+    let entity: SpatialEntity;
+    while(parent) {
+      if (parent.userData.entity) {
+        entity = parent.userData.entity;
+        break;
+      } else { 
+        parent = parent.parent;
+      }
+    }
       
-//     if (entity) {
-//       const keplar = _keplarElementMap.get(entity);
-//       Object.assign(activeKeplarElements, keplar);
-//       activeEntity = entity;
-//     }
-//   }
-// }
+    if (entity) {
+      const keplar = _keplarElementMap.get(entity);
+      Object.assign(activeKeplarElements, keplar);
+      activeEntity = entity;
+    }
+  }
+}
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
