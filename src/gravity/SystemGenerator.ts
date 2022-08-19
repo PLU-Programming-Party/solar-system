@@ -37,7 +37,12 @@ export class SystemGenerator {
         this.appendNewEntity(this._sun, mesh);
 
         for (let i = 1; i <= planetCount; i++) {
-          let lastApsis;
+          this.addRandomPlanet(distanceThreshold);
+        }
+    }
+
+    public addRandomPlanet(distanceThreshold = 100, centralBody = this._sun): void {
+      let lastApsis;
           if (this._keplarElementMap.size == 0) {
             lastApsis = 0;
           } else {
@@ -52,8 +57,6 @@ export class SystemGenerator {
           const randomElements = createRandomKeplarElements({semi_major_axis, eccentricity});
           const randomMass = Math.random() * 400 + 100;
           this.addNewPlanet(randomMass, this._sun, randomElements);
-        }
-
     }
 
     public get system() {

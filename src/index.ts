@@ -37,22 +37,6 @@ const mouse = new THREE.Vector2();
 // const sun = ps.constructBody(sunMass, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), true);
 // appendNewEntity(sun, createSunMesh(sunMass));
 
-// Main GUI setup 
-const sceneParams = {
-  pauseScene: false,
-  showOrbit: true,
-  updateOrbit: false,
-  // addRandomPlanet(){
-  //   addNewPlanet(Math.random() * 100, sun, createRandomKeplarElements({eccentricity: 0, inclination: 0}));
-  // } 
-}
-
-const sceneGUI = gui.addFolder('Scene Controls');
-sceneGUI.add( sceneParams, 'pauseScene').name('Pause Scene');
-sceneGUI.add( sceneParams, 'showOrbit').name('Show Orbit');
-sceneGUI.add( sceneParams, 'updateOrbit').name('Update Orbit');
-// sceneGUI.add( sceneParams, 'addRandomPlanet').name('Add Random Planet');
-
 // const earthMass = 500;
 // addNewPlanet(earthMass, sun, createRandomKeplarElements({eccentricity: 0, semi_major_axis: 250, inclination: 0}));
 
@@ -80,12 +64,29 @@ window.addEventListener('resize', onWindowResize);
 
 // Setup solar system
 const systemGenerator = new SystemGenerator(fixedInterval, intervals);
-systemGenerator.randomize(5);
+const distanceThreshold: number = undefined;
+systemGenerator.randomize(5, distanceThreshold);
 const ps = systemGenerator.system;
 const _entities = systemGenerator.entities;
 const _keplarElementMap = systemGenerator.keplarElementMap;
 const sun = systemGenerator.sun;
 
+// Scene Gui
+const sceneParams = {
+  pauseScene: false,
+  showOrbit: true,
+  updateOrbit: false,
+  addRandomPlanet(){
+    systemGenerator.addRandomPlanet(distanceThreshold);
+  } 
+}
+const sceneGUI = gui.addFolder('Scene Controls');
+sceneGUI.add( sceneParams, 'pauseScene').name('Pause Scene');
+sceneGUI.add( sceneParams, 'showOrbit').name('Show Orbit');
+sceneGUI.add( sceneParams, 'updateOrbit').name('Update Orbit');
+sceneGUI.add( sceneParams, 'addRandomPlanet').name('Add Random Planet');
+
+// Keplar Elements Gui
 let activeEntity: SpatialEntity = null;
 const activeKeplarElements: KeplarElements = {
   eccentricity: 0,
@@ -95,7 +96,6 @@ const activeKeplarElements: KeplarElements = {
   periapsis: 0,
   true_anomaly: 0
 }
-
 const keplarGui = gui.addFolder("Keplar Elements");
 keplarGui.onChange(() => {
   // intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
