@@ -62,14 +62,40 @@ export let intervals = 5000;
 window.addEventListener('click', onMouseClick);
 window.addEventListener('resize', onWindowResize);
 
+// System Generation GUI
+const generatorParams = {
+  planets: 3,
+  distanceThreshold: 500,
+  complexity: 1,
+  probability: .2,
+  randomize(){
+    for (const entity of _entities)
+      scene.remove(...[entity.orbit, entity.visual]);
+
+    systemGenerator.randomize(this.planets, this.distanceThreshold, this.complexity, this.probability);
+    ps = systemGenerator.system;
+    _entities = systemGenerator.entities;
+    _keplarElementMap = systemGenerator.keplarElementMap;
+    sun = systemGenerator.sun;
+
+    updateAllOrbits();
+  }
+}
+const generatorGUI = gui.addFolder("System Generator");
+generatorGUI.add(generatorParams, 'planets').name('Max Planets/Moons');
+generatorGUI.add(generatorParams, 'distanceThreshold', 50, 2000).name('Min Distance');
+generatorGUI.add(generatorParams, 'complexity').name('Complexity');
+generatorGUI.add(generatorParams, 'probability', 0, 1).name('Probability');
+generatorGUI.add(generatorParams, 'randomize').name('Randomize');
+
 // Setup solar system
 const systemGenerator = new SystemGenerator(fixedInterval, intervals);
-const distanceThreshold: number = undefined;
-systemGenerator.randomize(5, distanceThreshold);
-const ps = systemGenerator.system;
-const _entities = systemGenerator.entities;
-const _keplarElementMap = systemGenerator.keplarElementMap;
-const sun = systemGenerator.sun;
+const distanceThreshold: number = 500;
+systemGenerator.randomize(3, distanceThreshold, 1, .2);
+let ps = systemGenerator.system;
+let _entities = systemGenerator.entities;
+let _keplarElementMap = systemGenerator.keplarElementMap;
+let sun = systemGenerator.sun;
 
 // Scene Gui
 const sceneParams = {
@@ -110,6 +136,7 @@ keplarGui.add(activeKeplarElements, 'ascending_node', 0, 360).name('Angle of Asc
 keplarGui.add(activeKeplarElements, 'periapsis', 0, 360).name('Periapsis').listen();
 keplarGui.add(activeKeplarElements, 'true_anomaly', 0, 360).name('True Anomaly').listen();
 
+updateAllOrbits();
 requestAnimationFrame(animate);
 setInterval(fixedUpdate, fixedInterval);
 
@@ -119,6 +146,12 @@ function animate() {
   requestAnimationFrame(animate);
  
 };
+
+function updateAllOrbits() {
+  for (const entity of _entities) {
+    entity.updateOrbit(ps.predictPath(entity.body, fixedInterval, intervals));
+  }
+}
 
 function fixedUpdate() {
   for( let entity of _entities ){
