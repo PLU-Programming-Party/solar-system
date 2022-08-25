@@ -136,6 +136,7 @@ keplarGui.add(activeKeplarElements, 'ascending_node', 0, 360).name('Angle of Asc
 keplarGui.add(activeKeplarElements, 'periapsis', 0, 360).name('Periapsis').listen();
 keplarGui.add(activeKeplarElements, 'true_anomaly', 0, 360).name('True Anomaly').listen();
 
+ps.warmup(fixedInterval);
 updateAllOrbits();
 requestAnimationFrame(animate);
 setInterval(fixedUpdate, fixedInterval);
@@ -149,14 +150,14 @@ function animate() {
 
 function updateAllOrbits() {
   for (const entity of _entities) {
-    entity.updateOrbit(ps.predictPath(entity.body, fixedInterval, intervals));
+    entity.updateOrbit(ps.getPoseHistory(entity.body));
   }
 }
 
 function fixedUpdate() {
   for( let entity of _entities ){
     if(sceneParams.updateOrbit){
-      entity.updateOrbit(ps.predictPath(entity.body, fixedInterval, intervals));
+      entity.updateOrbit(ps.getPoseHistory(entity.body));
     }
     entity.orbit.visible = sceneParams.showOrbit;
   }
