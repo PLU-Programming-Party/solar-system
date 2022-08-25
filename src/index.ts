@@ -74,6 +74,7 @@ const generatorParams = {
 
     systemGenerator.randomize(this.planets, this.distanceThreshold, this.complexity, this.probability);
     ps = systemGenerator.system;
+    ps.warmup(fixedInterval);
     _entities = systemGenerator.entities;
     _keplarElementMap = systemGenerator.keplarElementMap;
     sun = systemGenerator.sun;

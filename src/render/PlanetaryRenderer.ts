@@ -12,7 +12,7 @@ export function createOrbitPath(points: THREE.Vector3[]): [THREE.Group, OrbitUpd
     const group = new THREE.Group();
     group.add(line);
     const updateFunc = (points: THREE.Vector3[]) => {
-        geometry.setFromPoints(points);
+        geometry.setFromPoints(points.filter((p, i) => i % 100 === 0));
     }
     return [group, updateFunc];
 }
