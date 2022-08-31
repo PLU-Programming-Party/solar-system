@@ -33,6 +33,21 @@ export class PlanetarySystem {
         return newSystem;
     }
 
+    public backtrack(fixedUpdateTime: number) {
+        for (const body of this._bodies) {
+            const history = this._poseHistory.get(body);
+            if (history.length > 0) {
+                const firstPos = history[0];
+                const secondPos = (history.length > 1) ? history[1] : body.pos;
+                const vel = secondPos.clone().sub(firstPos).divideScalar(fixedUpdateTime);
+
+                body.pos = firstPos;
+                body.vel = vel;
+                this._poseHistory.set(body, [body.pos.clone()]);
+            }
+        }
+    }
+
     public warmup(time: number) {
         for (let i = 0; i < this.historySize; i++) {
             this.accelerateSystem(time);
