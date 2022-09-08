@@ -13,6 +13,22 @@ import G from './gravity/GravityConstant';
 import { createEarthMesh, createStarField, createSunMesh, OrbitUpdater } from './render/PlanetaryRenderer';
 import skyBox from './Skybox';
 import { SystemGenerator } from './gravity/SystemGenerator';
+import { Mesh, ShaderMaterial, SphereGeometry } from 'three';
+import vertexShader from './shaders/vert.glsl';
+import fragmentShader from './shaders/frag.glsl';
+import { GPUComputationRenderer } from 'gpucomputationrender-three';
+
+// const vertexShader = require('./shaders/vert.glsl');
+// const fragmentShader = require('./shaders/frag.glsl');
+
+// const shaderTestMesh = new Mesh(new SphereGeometry(100), new ShaderMaterial({
+//   vertexShader,
+//   fragmentShader,
+//   glslVersion: THREE.GLSL3
+// }));
+// scene.add(shaderTestMesh);
+
+const gpuComp = new GPUComputationRenderer(64, 64, renderer);
 
 //TODO: Live update keplar elements
 //TODO: Create a more comprehensive testing suite
