@@ -96,8 +96,7 @@ export class SystemGenerator {
     private appendNewEntity(body: SpatialBody, group: THREE.Group): SpatialEntity {
         scene.add(group);
         body.onPositionChange = (x, y, z) => group.position.set(x, y, z);
-        let simulation = this._system.predictPath(body, this.fixedInterval, this.intervals);
-        const [orbit, updateOrbit] = createOrbitPath(simulation);
+        const [orbit, updateOrbit] = createOrbitPath(this._system.getPoseHistory(body));
         scene.add(orbit);
         const entity: SpatialEntity = {
           body,

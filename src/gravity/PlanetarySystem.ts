@@ -5,14 +5,19 @@ import { KeplarElements, keplarToCartesian } from "./GravityCalc";
 
 export class PlanetarySystem {
     private _bodies: SpatialBody[];
+    private _poseHistory: Map<SpatialBody, THREE.Vector3[]>;
+    private _historyCounter: number;
 
-    constructor() {
+    constructor(private historySize: number = 10000, private historyPrecision: number = 10) {
         this._bodies = [];
+        this._poseHistory = new Map<SpatialBody, THREE.Vector3[]>();
+        this._historyCounter = 0;
     }
 
     public constructBody(mass: number, position: THREE.Vector3, velocity: THREE.Vector3, isStationary: boolean): SpatialBody {
         const body = new SpatialBody(position, velocity, mass, isStationary);
         this.addBody(body);
+        this._poseHistory.set(body, [body.pos.clone()]);
         return body;
     }
 
@@ -28,21 +33,30 @@ export class PlanetarySystem {
         return newSystem;
     }
 
-    public predictPath(body: SpatialBody, time: number, count: number): THREE.Vector3[] {
-        let clonedSystem = this.clone();
+    public backtrack(fixedUpdateTime: number) {
+        for (const body of this._bodies) {
+            const history = this._poseHistory.get(body);
+            if (history.length > 0) {
+                const firstPos = history[0];
+                const secondPos = (history.length > 1) ? history[1] : body.pos;
+                const vel = secondPos.clone().sub(firstPos).divideScalar(fixedUpdateTime);
 
-        let clonedBody = clonedSystem._bodies.filter(b => b.id === body.id)[0];
-
-        let positions: THREE.Vector3[] = [];
-
-        positions.push(clonedBody.pos.clone());
-        for (let i = 0; i < count; i++) {
-            clonedSystem.accelerateSystem(time);
-            clonedSystem.updateSystem(time);
-            positions.push(clonedBody.pos.clone());
+                body.pos = firstPos;
+                body.vel = vel;
+                this._poseHistory.set(body, [body.pos.clone()]);
+            }
         }
+    }
 
-        return positions;
+    public warmup(time: number) {
+        for (let i = 0; i < this.historySize; i++) {
+            this.accelerateSystem(time);
+            this.updateSystem(time);
+        }
+    }
+
+    public getPoseHistory(body: SpatialBody) {
+        return this._poseHistory.get(body);
     }
 
     /**
@@ -55,7 +69,8 @@ export class PlanetarySystem {
             for (const compareBody of this._bodies) {
                 if (body.id !== compareBody.id) {
                     // Calculate force magnitude G * m1 * m2 / r^2
-                    let force = G * body.mass * compareBody.mass / Math.pow(body.pos.distanceTo(compareBody.pos), 2);
+                    const distance = body.pos.distanceTo(compareBody.pos);
+                    let force = G * body.mass * compareBody.mass /  (distance * distance);
                     
                     // Calculate force vector direction
                     let direction = compareBody.pos.clone();
@@ -82,7 +97,12 @@ export class PlanetarySystem {
     public updateSystem(time: number) {
         for (const sb of this._bodies) {
             sb.update(time);
-            sb.onPositionChange?.(sb.pos.x, sb.pos.y, sb.pos.z);
+            this._poseHistory.get(sb).push(sb.pos.clone());
+            if(this._poseHistory.get(sb).length > this.historySize) {
+                this._poseHistory.get(sb).shift();
+            }
+            const oldestPosition = this._poseHistory.get(sb)[0];
+            sb.onPositionChange?.(oldestPosition.x, oldestPosition.y, oldestPosition.z);
         }
     }
 

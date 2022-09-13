@@ -13,6 +13,22 @@ import G from './gravity/GravityConstant';
 import { createEarthMesh, createStarField, createSunMesh, OrbitUpdater } from './render/PlanetaryRenderer';
 import skyBox from './Skybox';
 import { SystemGenerator } from './gravity/SystemGenerator';
+import { Mesh, ShaderMaterial, SphereGeometry } from 'three';
+import vertexShader from './shaders/vert.glsl';
+import fragmentShader from './shaders/frag.glsl';
+import { GPUComputationRenderer } from 'gpucomputationrender-three';
+
+// const vertexShader = require('./shaders/vert.glsl');
+// const fragmentShader = require('./shaders/frag.glsl');
+
+// const shaderTestMesh = new Mesh(new SphereGeometry(100), new ShaderMaterial({
+//   vertexShader,
+//   fragmentShader,
+//   glslVersion: THREE.GLSL3
+// }));
+// scene.add(shaderTestMesh);
+
+const gpuComp = new GPUComputationRenderer(64, 64, renderer);
 
 //TODO: Live update keplar elements
 //TODO: Create a more comprehensive testing suite
@@ -74,6 +90,7 @@ const generatorParams = {
 
     systemGenerator.randomize(this.planets, this.distanceThreshold, this.complexity, this.probability);
     ps = systemGenerator.system;
+    ps.warmup(fixedInterval);
     _entities = systemGenerator.entities;
     _keplarElementMap = systemGenerator.keplarElementMap;
     sun = systemGenerator.sun;
@@ -90,8 +107,8 @@ generatorGUI.add(generatorParams, 'randomize').name('Randomize');
 
 // Setup solar system
 const systemGenerator = new SystemGenerator(fixedInterval, intervals);
-const distanceThreshold: number = 500;
-systemGenerator.randomize(3, distanceThreshold, 1, .2);
+// const distanceThreshold: number = 500;
+systemGenerator.randomize(3, generatorParams.distanceThreshold, 1, .2);
 let ps = systemGenerator.system;
 let _entities = systemGenerator.entities;
 let _keplarElementMap = systemGenerator.keplarElementMap;
@@ -103,7 +120,9 @@ const sceneParams = {
   showOrbit: true,
   updateOrbit: false,
   addRandomPlanet(){
-    systemGenerator.addRandomPlanet(distanceThreshold);
+    ps.backtrack(fixedInterval);
+    systemGenerator.addRandomPlanet(generatorParams.distanceThreshold);
+    ps.warmup(fixedInterval);
   } 
 }
 const sceneGUI = gui.addFolder('Scene Controls');
@@ -124,11 +143,13 @@ const activeKeplarElements: KeplarElements = {
 }
 const keplarGui = gui.addFolder("Keplar Elements");
 keplarGui.onChange(() => {
+  ps.backtrack(fixedInterval);
   // intervals = 2 * Math.PI * Math.sqrt(Math.pow(activeKeplarElements.semi_major_axis, 3) / (G * sun.mass)) / fixedInterval;
   const stateVectors = keplarToCartesian(sun, 500, activeKeplarElements);
   activeEntity.body.pos.set(stateVectors.pos.x, stateVectors.pos.y, stateVectors.pos.z);
   activeEntity.body.vel.set(stateVectors.vel.x, stateVectors.vel.y, stateVectors.vel.z);
-})
+  ps.warmup(fixedInterval);
+});
 keplarGui.add(activeKeplarElements, 'eccentricity', 0, 1).name('Eccentricity').listen();
 keplarGui.add(activeKeplarElements, 'semi_major_axis', 100, 1000).name('Semi-Major Axis').listen();
 keplarGui.add(activeKeplarElements, 'inclination', 0, 360).name('Inclination').listen();
@@ -136,6 +157,7 @@ keplarGui.add(activeKeplarElements, 'ascending_node', 0, 360).name('Angle of Asc
 keplarGui.add(activeKeplarElements, 'periapsis', 0, 360).name('Periapsis').listen();
 keplarGui.add(activeKeplarElements, 'true_anomaly', 0, 360).name('True Anomaly').listen();
 
+ps.warmup(fixedInterval);
 updateAllOrbits();
 requestAnimationFrame(animate);
 setInterval(fixedUpdate, fixedInterval);
@@ -149,14 +171,14 @@ function animate() {
 
 function updateAllOrbits() {
   for (const entity of _entities) {
-    entity.updateOrbit(ps.predictPath(entity.body, fixedInterval, intervals));
+    entity.updateOrbit(ps.getPoseHistory(entity.body));
   }
 }
 
 function fixedUpdate() {
   for( let entity of _entities ){
     if(sceneParams.updateOrbit){
-      entity.updateOrbit(ps.predictPath(entity.body, fixedInterval, intervals));
+      entity.updateOrbit(ps.getPoseHistory(entity.body));
     }
     entity.orbit.visible = sceneParams.showOrbit;
   }

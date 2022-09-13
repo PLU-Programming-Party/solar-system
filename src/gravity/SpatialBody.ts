@@ -76,6 +76,14 @@ export class SpatialBody {
         return this._vel;
     }
 
+    public set pos(pos: THREE.Vector3) {
+        this._pos = pos;
+    }
+
+    public set vel(vel: THREE.Vector3) {
+        this._vel = vel;
+    }
+
     public get mass(): number {
         return this._mass;
     }
